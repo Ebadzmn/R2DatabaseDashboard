@@ -3,56 +3,60 @@
 import React, { useState } from "react";
 import { IMovie, MovieStatus } from "@/lib/types";
 import {
-  Film,
+  Tv,
   Search,
-  Filter,
-  Play,
   RotateCw,
   Edit2,
   Trash2,
   LayoutGrid,
   List,
   Clock,
-  Sparkles,
   AlertCircle,
   CheckCircle2,
+  Play,
+  Layers,
+  Plus,
+  Sparkles,
+  ChevronRight,
   UploadCloud,
 } from "lucide-react";
 
-interface MovieListProps {
-  movies: IMovie[];
-  onSelectMovie: (movie: IMovie) => void;
-  onEditMovie: (movie: IMovie) => void;
-  onDeleteMovie: (id: string) => void;
-  onPlayMovie: (movie: IMovie) => void;
-  onReprocessMovie: (id: string) => void;
-  onUploadVideo?: (movie: IMovie) => void;
+interface SeriesListProps {
+  series: IMovie[];
+  onSelectSeries: (series: IMovie) => void;
+  onEditSeries: (series: IMovie) => void;
+  onDeleteSeries: (id: string) => void;
+  onPlaySeries: (series: IMovie) => void;
+  onReprocessSeries: (id: string) => void;
+  onUploadVideo?: (series: IMovie) => void;
+  onManageEpisodes: (series: IMovie) => void;
   onOpenCreate: () => void;
   onRefresh: () => void;
   isLoading?: boolean;
 }
 
-export function MovieList({
-  movies,
-  onSelectMovie,
-  onEditMovie,
-  onDeleteMovie,
-  onPlayMovie,
-  onReprocessMovie,
+export function SeriesList({
+  series,
+  onSelectSeries,
+  onEditSeries,
+  onDeleteSeries,
+  onPlaySeries,
+  onReprocessSeries,
   onUploadVideo,
+  onManageEpisodes,
   onOpenCreate,
   onRefresh,
   isLoading = false,
-}: MovieListProps) {
+}: SeriesListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
-  const filteredMovies = movies.filter((m) => {
+  const filteredSeries = series.filter((s) => {
     const matchesSearch =
-      m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (m.description && m.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesStatus = statusFilter === "ALL" || m.status === statusFilter;
+      s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus = statusFilter === "ALL" || s.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -69,7 +73,7 @@ export function MovieList({
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse">
             <RotateCw className="w-3.5 h-3.5 animate-spin" />
-            Transcoding {progress ? `${progress}%` : ""}
+            Processing {progress ? `${progress}%` : ""}
           </span>
         );
       case "UPLOADING":
@@ -104,7 +108,7 @@ export function MovieList({
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search movies by title or description..."
+            placeholder="Search TV series, shows, episodes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 transition-all"
@@ -114,13 +118,13 @@ export function MovieList({
         {/* Status Filter & View Toggle */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-800 rounded-xl p-1 text-xs">
-            {["ALL", "READY", "PROCESSING", "DRAFT", "FAILED"].map((status) => (
+            {["ALL", "READY", "PROCESSING", "DRAFT"].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
                 className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                   statusFilter === status
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
@@ -134,7 +138,7 @@ export function MovieList({
               onClick={() => setViewMode("grid")}
               className={`p-1.5 rounded-lg transition-colors ${
                 viewMode === "grid"
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-purple-600 text-white"
                   : "text-slate-400 hover:text-slate-200"
               }`}
               title="Grid View"
@@ -145,7 +149,7 @@ export function MovieList({
               onClick={() => setViewMode("table")}
               className={`p-1.5 rounded-lg transition-colors ${
                 viewMode === "table"
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-purple-600 text-white"
                   : "text-slate-400 hover:text-slate-200"
               }`}
               title="Table View"
@@ -164,58 +168,60 @@ export function MovieList({
         </div>
       </div>
 
-      {/* Movie Results */}
-      {filteredMovies.length === 0 ? (
+      {/* Series Results */}
+      {filteredSeries.length === 0 ? (
         <div className="p-12 text-center rounded-2xl bg-[#0f172a]/50 border border-slate-800/80">
-          <Film className="w-12 h-12 mx-auto mb-3 text-slate-600 opacity-40" />
-          <h4 className="text-base font-semibold text-slate-300">No movies match your criteria</h4>
+          <Tv className="w-12 h-12 mx-auto mb-3 text-slate-600 opacity-40" />
+          <h4 className="text-base font-semibold text-slate-300">No TV Series cataloged yet</h4>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-            Try adjusting your search query or filter tags, or create a new movie record.
+            Use TMDB auto-import to catalog shows with seasons and episodes in seconds.
           </p>
           <button
             onClick={onOpenCreate}
-            className="mt-4 px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all"
+            className="mt-4 px-4 py-2 text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all inline-flex items-center gap-2 shadow-lg shadow-purple-600/30 cursor-pointer"
           >
-            Create New Movie
+            <Plus className="w-4 h-4" />
+            <span>Create New Series</span>
           </button>
         </div>
       ) : viewMode === "grid" ? (
         /* Grid View */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredMovies.map((movie) => (
+          {filteredSeries.map((item) => (
             <div
-              key={movie._id}
-              className="rounded-2xl bg-[#0f172a]/80 border border-slate-800/80 hover:border-indigo-500/40 shadow-xl overflow-hidden group transition-all flex flex-col justify-between"
+              key={item._id}
+              className="rounded-2xl bg-[#0f172a]/80 border border-slate-800/80 hover:border-purple-500/40 shadow-xl overflow-hidden group transition-all flex flex-col justify-between"
             >
               {/* Poster Card Header */}
               <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
-                {movie.backdrop || movie.poster ? (
+                {item.backdrop || item.poster ? (
                   <img
-                    src={movie.backdrop || movie.poster}
-                    alt={movie.title}
+                    src={item.backdrop || item.poster}
+                    alt={item.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-slate-600">
-                    <Film className="w-10 h-10 mb-1 opacity-30" />
+                    <Tv className="w-10 h-10 mb-1 opacity-30" />
                     <span className="text-[10px]">No visual media</span>
                   </div>
                 )}
 
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-black/30" />
 
-                <div className="absolute top-3 left-3">{getStatusBadge(movie.status, movie.processingProgress)}</div>
+                <div className="absolute top-3 left-3">{getStatusBadge(item.status, item.processingProgress)}</div>
 
-                <div className="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-semibold text-slate-300 border border-white/10 uppercase">
-                  {movie.type}
+                <div className="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-purple-950/80 backdrop-blur-md text-[10px] font-semibold text-purple-300 border border-purple-500/30 uppercase flex items-center gap-1">
+                  <Layers className="w-3 h-3" />
+                  <span>{item.episodes?.length || 0} EPS</span>
                 </div>
 
-                {movie.status === "READY" && (
+                {item.status === "READY" && (
                   <button
-                    onClick={() => onPlayMovie(movie)}
-                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]"
+                    onClick={() => onPlaySeries(item)}
+                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px] cursor-pointer"
                   >
-                    <div className="w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-xl shadow-indigo-600/50 transform hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center shadow-xl shadow-purple-600/50 transform hover:scale-110 transition-transform">
                       <Play className="w-5 h-5 fill-white ml-0.5" />
                     </div>
                   </button>
@@ -225,48 +231,62 @@ export function MovieList({
               {/* Card Body */}
               <div className="p-4 flex-1 flex flex-col justify-between">
                 <div>
-                  <h4 className="font-bold text-slate-100 text-sm group-hover:text-indigo-400 transition-colors line-clamp-1">
-                    {movie.title}
+                  <h4 className="font-bold text-slate-100 text-sm group-hover:text-purple-400 transition-colors line-clamp-1">
+                    {item.title}
                   </h4>
                   <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
-                    <span>{movie.releaseYear || "N/A"}</span>
-                    {movie.duration && (
+                    <span>{item.releaseYear || "N/A"}</span>
+                    {item.rating && (
                       <>
                         <span>•</span>
-                        <span>{Math.round(movie.duration / 60)} min</span>
+                        <span className="text-amber-400 font-semibold">★ {item.rating}</span>
                       </>
                     )}
-                    {movie.resolution && (
+                    {item.genres?.length > 0 && (
                       <>
                         <span>•</span>
-                        <span className="text-emerald-400 font-mono text-[11px]">
-                          {movie.resolution}
-                        </span>
+                        <span className="text-slate-400 truncate max-w-[100px]">{item.genres[0]}</span>
                       </>
                     )}
                   </div>
-                  {movie.description && (
+                  {item.description && (
                     <p className="text-xs text-slate-400 mt-2 line-clamp-2 leading-relaxed">
-                      {movie.description}
+                      {item.description}
                     </p>
                   )}
 
+                  {/* Manage Episodes & Seasons Button */}
+                  <div className="mt-3">
+                    <button
+                      onClick={() => onManageEpisodes(item)}
+                      className="w-full py-2 px-3 rounded-xl bg-purple-950/60 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 text-xs font-semibold transition-all flex items-center justify-between cursor-pointer group/btn"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-purple-400 group-hover/btn:text-white" />
+                        <span>Seasons & Episodes</span>
+                      </div>
+                      <span className="text-[10px] font-mono bg-purple-900/80 px-1.5 py-0.5 rounded text-purple-200">
+                        {item.episodes?.length || 0}
+                      </span>
+                    </button>
+                  </div>
+
                   {/* Live Transcoding Progress Bar */}
-                  {movie.status === "PROCESSING" && (
-                    <div className="mt-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-1.5 animate-in fade-in">
+                  {item.status === "PROCESSING" && (
+                    <div className="mt-3 p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 space-y-1.5 animate-in fade-in">
                       <div className="flex items-center justify-between text-[11px] font-semibold">
-                        <span className="text-amber-400 flex items-center gap-1.5">
+                        <span className="text-purple-400 flex items-center gap-1.5">
                           <RotateCw className="w-3 h-3 animate-spin" />
                           <span>Transcoding HLS (1080p + 720p)</span>
                         </span>
-                        <span className="text-amber-300 font-mono font-bold">
-                          {movie.processingProgress || 0}%
+                        <span className="text-purple-300 font-mono font-bold">
+                          {item.processingProgress || 0}%
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-amber-500/30">
+                      <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-purple-500/30">
                         <div
-                          className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-300 shadow-md shadow-amber-500/50"
-                          style={{ width: `${Math.max(5, movie.processingProgress || 0)}%` }}
+                          className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 rounded-full transition-all duration-300 shadow-md shadow-purple-500/50"
+                          style={{ width: `${Math.max(5, item.processingProgress || 0)}%` }}
                         />
                       </div>
                     </div>
@@ -276,34 +296,34 @@ export function MovieList({
                 {/* Card Footer Actions */}
                 <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    {movie.status === "READY" && (
+                    {item.status === "READY" && (
                       <button
-                        onClick={() => onPlayMovie(movie)}
-                        className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors"
-                        title="Stream HLS Playback"
+                        onClick={() => onPlaySeries(item)}
+                        className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-colors cursor-pointer"
+                        title="Stream Playback"
                       >
                         <Play className="w-4 h-4 fill-current" />
                       </button>
                     )}
                     <button
-                      onClick={() => onReprocessMovie(movie._id)}
-                      className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg transition-colors"
-                      title="Trigger FFmpeg Transcoding"
+                      onClick={() => onReprocessSeries(item._id)}
+                      className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg transition-colors cursor-pointer"
+                      title="Trigger Transcoding"
                     >
                       <RotateCw className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => onEditMovie(movie)}
-                      className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                      onClick={() => onEditSeries(item)}
+                      className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                       title="Edit metadata"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     {onUploadVideo && (
                       <button
-                        onClick={() => onUploadVideo(movie)}
-                        className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
-                        title="Upload/Replace Video file"
+                        onClick={() => onUploadVideo(item)}
+                        className="p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer"
+                        title="Upload Episode Video file"
                       >
                         <UploadCloud className="w-4 h-4" />
                       </button>
@@ -311,9 +331,9 @@ export function MovieList({
                   </div>
 
                   <button
-                    onClick={() => onDeleteMovie(movie._id)}
-                    className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                    title="Delete Movie and R2 objects"
+                    onClick={() => onDeleteSeries(item._id)}
+                    className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                    title="Delete Series"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -328,92 +348,83 @@ export function MovieList({
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-900/60 border-b border-slate-800/80 text-slate-400 font-semibold uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 px-4">Movie</th>
-                <th className="py-3.5 px-4">Type</th>
+                <th className="py-3.5 px-4">Series Title</th>
                 <th className="py-3.5 px-4">Year</th>
-                <th className="py-3.5 px-4">Resolution</th>
+                <th className="py-3.5 px-4">Episodes</th>
+                <th className="py-3.5 px-4">Rating</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {filteredMovies.map((movie) => (
-                <tr
-                  key={movie._id}
-                  className="hover:bg-slate-800/30 transition-colors group"
-                >
+              {filteredSeries.map((item) => (
+                <tr key={item._id} className="hover:bg-slate-800/30 transition-colors group">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-11 rounded bg-slate-800 shrink-0 overflow-hidden flex items-center justify-center text-slate-600">
-                        {movie.poster ? (
-                          <img
-                            src={movie.poster}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
+                        {item.poster ? (
+                          <img src={item.poster} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <Film className="w-3.5 h-3.5" />
+                          <Tv className="w-3.5 h-3.5" />
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors">
-                          {movie.title}
+                        <div className="font-semibold text-slate-200 group-hover:text-purple-400 transition-colors">
+                          {item.title}
                         </div>
-                        <div className="text-[11px] text-slate-500 font-mono">
-                          /{movie.slug}
-                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono">/{item.slug}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4 uppercase text-slate-400 font-medium">
-                    {movie.type}
-                  </td>
-                  <td className="py-3 px-4 text-slate-300">
-                    {movie.releaseYear || "—"}
-                  </td>
-                  <td className="py-3 px-4 font-mono text-emerald-400">
-                    {movie.resolution || "—"}
-                  </td>
+                  <td className="py-3 px-4 text-slate-300">{item.releaseYear || "—"}</td>
                   <td className="py-3 px-4">
-                    {getStatusBadge(movie.status, movie.processingProgress)}
+                    <button
+                      onClick={() => onManageEpisodes(item)}
+                      className="px-2.5 py-1 rounded-lg bg-purple-950/60 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Layers className="w-3 h-3" />
+                      <span>{item.episodes?.length || 0} Episodes</span>
+                    </button>
                   </td>
+                  <td className="py-3 px-4 text-amber-400 font-semibold">{item.rating ? `★ ${item.rating}` : "—"}</td>
+                  <td className="py-3 px-4">{getStatusBadge(item.status, item.processingProgress)}</td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      {movie.status === "READY" && (
+                      {item.status === "READY" && (
                         <button
-                          onClick={() => onPlayMovie(movie)}
-                          className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg"
+                          onClick={() => onPlaySeries(item)}
+                          className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg cursor-pointer"
                           title="Stream Playback"
                         >
                           <Play className="w-3.5 h-3.5 fill-current" />
                         </button>
                       )}
                       <button
-                        onClick={() => onReprocessMovie(movie._id)}
-                        className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded-lg"
+                        onClick={() => onReprocessSeries(item._id)}
+                        className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded-lg cursor-pointer"
                         title="Reprocess"
                       >
                         <RotateCw className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => onEditMovie(movie)}
-                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
+                        onClick={() => onEditSeries(item)}
+                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg cursor-pointer"
                         title="Edit"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       {onUploadVideo && (
                         <button
-                          onClick={() => onUploadVideo(movie)}
-                          className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg"
+                          onClick={() => onUploadVideo(item)}
+                          className="p-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 rounded-lg cursor-pointer"
                           title="Upload Video"
                         >
                           <UploadCloud className="w-3.5 h-3.5" />
                         </button>
                       )}
                       <button
-                        onClick={() => onDeleteMovie(movie._id)}
-                        className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg"
+                        onClick={() => onDeleteSeries(item._id)}
+                        className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg cursor-pointer"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

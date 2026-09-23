@@ -18,6 +18,7 @@ interface HeaderProps {
   title: string;
   subtitle?: string;
   onOpenNewMovie?: () => void;
+  onOpenNewSeries?: () => void;
   onOpenUpload?: () => void;
 }
 
@@ -25,6 +26,7 @@ export function Header({
   title,
   subtitle,
   onOpenNewMovie,
+  onOpenNewSeries,
   onOpenUpload,
 }: HeaderProps) {
   const { user, logout } = useAuth();
@@ -116,6 +118,16 @@ export function Header({
             >
               <Plus className="w-4 h-4 text-indigo-400" />
               <span>Add Movie</span>
+            </button>
+          )}
+
+          {onOpenNewSeries && (
+            <button
+              onClick={onOpenNewSeries}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-purple-950/70 hover:bg-purple-900/80 text-purple-200 hover:text-white border border-purple-500/40 transition-all"
+            >
+              <Plus className="w-4 h-4 text-purple-400" />
+              <span>Add Series</span>
             </button>
           )}
 

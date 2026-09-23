@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
 import {
   LayoutDashboard,
   Film,
+  Tv,
   HardDrive,
   UploadCloud,
   ChevronLeft,
@@ -12,7 +12,7 @@ import {
   Radio,
 } from "lucide-react";
 
-export type NavTab = "overview" | "movies" | "storage" | "upload";
+export type NavTab = "overview" | "movies" | "series" | "storage" | "upload";
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -21,6 +21,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   activeStoragesCount?: number;
   totalMoviesCount?: number;
+  totalSeriesCount?: number;
 }
 
 export function Sidebar({
@@ -30,6 +31,7 @@ export function Sidebar({
   onToggleCollapse,
   activeStoragesCount = 0,
   totalMoviesCount = 0,
+  totalSeriesCount = 0,
 }: SidebarProps) {
   const navItems = [
     {
@@ -43,6 +45,12 @@ export function Sidebar({
       label: "Movies Studio",
       icon: Film,
       badge: totalMoviesCount > 0 ? totalMoviesCount : null,
+    },
+    {
+      id: "series" as NavTab,
+      label: "Series & Shows",
+      icon: Tv,
+      badge: totalSeriesCount > 0 ? totalSeriesCount : null,
     },
     {
       id: "storage" as NavTab,

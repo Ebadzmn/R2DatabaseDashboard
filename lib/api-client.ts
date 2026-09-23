@@ -9,10 +9,14 @@ import {
   PlaybackResponse,
   TestStorageInput,
   CreateStorageInput,
+  ITmdbSearchResult,
+  ITmdbDetails,
+  IUploadSession,
+  InitRemoteDownloadResponse,
 } from "./types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5003/api";
 
 class ApiError extends Error {
   public code?: string;
@@ -196,8 +200,38 @@ export const api = {
           videoCodec?: string;
           audioCodec?: string;
         };
+        episodes?: any[];
       }>(`/admin/movies/${id}/status`),
     getPlayback: (id: string) => request<PlaybackResponse>(`/movies/${id}/playback`),
+    // Series Episodes
+    addEpisode: (
+      id: string,
+      data: {
+        seasonNumber: number;
+        episodeNumber: number;
+        title: string;
+        overview?: string;
+        stillPath?: string;
+        duration?: number;
+        airDate?: string;
+        rating?: number;
+      }
+    ) =>
+      request<any>(`/admin/movies/${id}/episodes`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateEpisode: (id: string, episodeId: string, data: Partial<any>) =>
+      request<any>(`/admin/movies/${id}/episodes/${episodeId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    deleteEpisode: (id: string, episodeId: string) =>
+      request<void>(`/admin/movies/${id}/episodes/${episodeId}`, { method: "DELETE" }),
+    importTmdbEpisodes: (id: string) =>
+      request<IMovie>(`/admin/movies/${id}/seasons/import-tmdb`, { method: "POST" }),
+    getEpisodePlayback: (id: string, season: number, episode: number) =>
+      request<PlaybackResponse>(`/movies/${id}/seasons/${season}/episodes/${episode}/playback`),
   },
 
   // Direct-to-R2 Upload Management
@@ -207,6 +241,10 @@ export const api = {
       fileSize: number;
       contentType?: string;
       movieId?: string;
+      episodeId?: string;
+      seasonNumber?: number;
+      episodeNumber?: number;
+      storageAccountId?: string;
       partCount?: number;
     }) =>
       request<InitUploadResponse>("/admin/uploads/init", {
@@ -224,7 +262,25 @@ export const api = {
       }),
     abort: (sessionId: string) =>
       request<any>(`/admin/uploads/${sessionId}/abort`, { method: "POST" }),
-    getById: (sessionId: string) => request<any>(`/admin/uploads/${sessionId}`),
+    getById: (sessionId: string) => request<IUploadSession>(`/admin/uploads/${sessionId}`),
+    initRemoteDownload: (data: {
+      url: string;
+      fileName?: string;
+      movieId?: string;
+      episodeId?: string;
+      seasonNumber?: number;
+      episodeNumber?: number;
+      storageAccountId?: string;
+    }) =>
+      request<InitRemoteDownloadResponse>("/admin/uploads/remote-url", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    cancelRemoteDownload: (sessionId: string) =>
+      request<{ success: boolean; message: string }>(
+        `/admin/uploads/remote-url/${sessionId}/cancel`,
+        { method: "POST" }
+      ),
     uploadChunkEndpoint: (sessionId: string, partNumber: number) => ({
       url: `${API_BASE_URL}/admin/uploads/${sessionId}/part/${partNumber}`,
       token: getToken(),
@@ -234,7 +290,35 @@ export const api = {
       token: getToken(),
     }),
   },
-};
 
+  // TMDB Metadata Integration
+  tmdb: {
+    search: (query: string, type: "movie" | "tv" | "multi" = "multi", page = 1) =>
+      request<{
+        page: number;
+        totalResults: number;
+        totalPages: number;
+        results: ITmdbSearchResult[];
+      }>(`/admin/tmdb/search?query=${encodeURIComponent(query)}&type=${type}&page=${page}`),
+    getDetails: (id: string | number, type: "movie" | "tv" = "movie") =>
+      request<ITmdbDetails>(`/admin/tmdb/details/${id}?type=${type}`),
+    getSeasonEpisodes: (tvId: string | number, seasonNumber: number) =>
+      request<{
+        seasonNumber: number;
+        name: string;
+        overview: string;
+        posterPath: string | null;
+        episodes: Array<{
+          episodeNumber: number;
+          title: string;
+          overview: string;
+          duration?: number;
+          stillPath: string | null;
+          airDate?: string;
+          rating: number;
+        }>;
+      }>(`/admin/tmdb/tv/${tvId}/season/${seasonNumber}`),
+  },
+};
 
 export { ApiError };

@@ -14,11 +14,15 @@ import { Header } from "@/components/layout/Header";
 // Views
 import { OverviewStats } from "@/components/dashboard/OverviewStats";
 import { MovieList } from "@/components/movies/MovieList";
+import { SeriesList } from "@/components/movies/SeriesList";
 import { MovieModal } from "@/components/movies/MovieModal";
 import { MoviePlaybackModal } from "@/components/movies/MoviePlaybackModal";
+import { SeriesEpisodesModal } from "@/components/movies/SeriesEpisodesModal";
 import { StorageList } from "@/components/storage/StorageList";
 import { AddStorageModal } from "@/components/storage/AddStorageModal";
 import { UploadStudio } from "@/components/uploads/UploadStudio";
+import { ConfirmDeleteModal } from "@/components/ui/ConfirmDeleteModal";
+import { IEpisode } from "@/lib/types";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -35,9 +39,15 @@ export default function DashboardPage() {
 
   // Modals
   const [isCreateMovieModalOpen, setIsCreateMovieModalOpen] = useState(false);
+  const [createModalMediaType, setCreateModalMediaType] = useState<"MOVIE" | "SERIES">("MOVIE");
   const [editingMovie, setEditingMovie] = useState<IMovie | null>(null);
   const [playbackMovie, setPlaybackMovie] = useState<IMovie | null>(null);
+  const [playbackEpisode, setPlaybackEpisode] = useState<{ series: IMovie; episode: IEpisode } | null>(null);
+  const [deleteTargetMovie, setDeleteTargetMovie] = useState<IMovie | null>(null);
   const [isAddStorageModalOpen, setIsAddStorageModalOpen] = useState(false);
+  const [targetMovieForUpload, setTargetMovieForUpload] = useState<IMovie | null>(null);
+  const [targetEpisodeForUpload, setTargetEpisodeForUpload] = useState<IEpisode | null>(null);
+  const [episodesModalSeries, setEpisodesModalSeries] = useState<IMovie | null>(null);
 
   // Redirect to login if unauthenticated
   useEffect(() => {
@@ -69,7 +79,21 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, fetchData]);
 
-  // Periodic polling if any movie is currently transcoding
+  // Periodic background sync for transcoding movies and R2 storage
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Periodic storage & catalog sync every 10 seconds
+    const syncInterval = setInterval(() => {
+      api.storage.getAll().then((res) => {
+        if (res.data) setStorages(res.data);
+      }).catch(() => {});
+    }, 10000);
+
+    return () => clearInterval(syncInterval);
+  }, [isAuthenticated]);
+
+  // Fast polling if any movie is currently transcoding
   useEffect(() => {
     const hasTranscoding = movies.some(
       (m) => m.status === "PROCESSING" || m.status === "UPLOADING"
@@ -84,7 +108,7 @@ export default function DashboardPage() {
           setMovies(res.data || []);
         })
         .catch(() => {});
-    }, 4000);
+    }, 1500);
 
     return () => clearInterval(interval);
   }, [movies]);
@@ -114,18 +138,24 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteMovie = async (id: string) => {
+  const handleDeleteMoviePrompt = (id: string) => {
     const movie = movies.find((m) => m._id === id);
-    if (!confirm(`Are you sure you want to delete "${movie?.title || "this movie"}"? R2 objects and HLS segments will be purged.`)) {
-      return;
+    if (movie) {
+      setDeleteTargetMovie(movie);
     }
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetMovie) return;
+    const id = deleteTargetMovie._id;
     try {
       await api.movies.delete(id);
-      success("Movie Deleted", "Movie and its Cloudflare R2 assets queued for deletion.");
+      success("Movie Deleted", `"${deleteTargetMovie.title}" and its R2 storage assets were deleted.`);
       setMovies((prev) => prev.filter((m) => m._id !== id));
+      setDeleteTargetMovie(null);
     } catch (err: any) {
       error("Delete Failed", err.message || "Could not delete movie.");
+      throw err;
     }
   };
 
@@ -208,6 +238,11 @@ export default function DashboardPage() {
           title: "Movies Studio",
           subtitle: "Manage video metadata, adaptive HLS streams, and transcoding jobs",
         };
+      case "series":
+        return {
+          title: "Series & Shows Studio",
+          subtitle: "Manage TV series, episodes, TMDB auto-imported seasons, and streaming",
+        };
       case "storage":
         return {
           title: "Cloudflare R2 Storage Nodes",
@@ -222,7 +257,19 @@ export default function DashboardPage() {
   };
 
   const activeStoragesCount = storages.filter((s) => s.status === "ACTIVE").length;
+  const singleMovies = movies.filter((m) => m.type === "MOVIE" || !m.type);
+  const seriesList = movies.filter((m) => m.type === "SERIES");
   const tabHeader = getTabTitle();
+
+  const handleOpenCreateMovie = () => {
+    setCreateModalMediaType("MOVIE");
+    setIsCreateMovieModalOpen(true);
+  };
+
+  const handleOpenCreateSeries = () => {
+    setCreateModalMediaType("SERIES");
+    setIsCreateMovieModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 flex">
@@ -233,7 +280,8 @@ export default function DashboardPage() {
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         activeStoragesCount={activeStoragesCount}
-        totalMoviesCount={movies.length}
+        totalMoviesCount={singleMovies.length}
+        totalSeriesCount={seriesList.length}
       />
 
       {/* Main Content Area */}
@@ -246,7 +294,8 @@ export default function DashboardPage() {
         <Header
           title={tabHeader.title}
           subtitle={tabHeader.subtitle}
-          onOpenNewMovie={() => setIsCreateMovieModalOpen(true)}
+          onOpenNewMovie={handleOpenCreateMovie}
+          onOpenNewSeries={handleOpenCreateSeries}
           onOpenUpload={() => setCurrentTab("upload")}
         />
 
@@ -263,13 +312,37 @@ export default function DashboardPage() {
 
           {currentTab === "movies" && (
             <MovieList
-              movies={movies}
+              movies={singleMovies}
               onSelectMovie={(m) => setPlaybackMovie(m)}
               onEditMovie={(m) => setEditingMovie(m)}
-              onDeleteMovie={handleDeleteMovie}
+              onDeleteMovie={handleDeleteMoviePrompt}
               onPlayMovie={(m) => setPlaybackMovie(m)}
               onReprocessMovie={handleReprocessMovie}
-              onOpenCreate={() => setIsCreateMovieModalOpen(true)}
+              onUploadVideo={(m) => {
+                setTargetMovieForUpload(m);
+                setCurrentTab("upload");
+              }}
+              onOpenCreate={handleOpenCreateMovie}
+              onRefresh={fetchData}
+              isLoading={loadingData}
+            />
+          )}
+
+          {currentTab === "series" && (
+            <SeriesList
+              series={seriesList}
+              onSelectSeries={(s) => setEpisodesModalSeries(s)}
+              onEditSeries={(s) => setEditingMovie(s)}
+              onDeleteSeries={handleDeleteMoviePrompt}
+              onPlaySeries={(s) => setPlaybackMovie(s)}
+              onReprocessSeries={handleReprocessMovie}
+              onUploadVideo={(s) => {
+                setTargetMovieForUpload(s);
+                setTargetEpisodeForUpload(null);
+                setCurrentTab("upload");
+              }}
+              onManageEpisodes={(s) => setEpisodesModalSeries(s)}
+              onOpenCreate={handleOpenCreateSeries}
               onRefresh={fetchData}
               isLoading={loadingData}
             />
@@ -290,18 +363,23 @@ export default function DashboardPage() {
           {currentTab === "upload" && (
             <UploadStudio
               movies={movies}
+              storages={storages}
+              initialTargetMovie={targetMovieForUpload}
+              initialTargetEpisode={targetEpisodeForUpload}
               onUploadSuccess={fetchData}
               onNavigateMovies={() => setCurrentTab("movies")}
+              onNavigateSeries={() => setCurrentTab("series")}
             />
           )}
         </main>
       </div>
 
-      {/* Create Movie Modal */}
+      {/* Create Movie/Series Modal */}
       <MovieModal
         isOpen={isCreateMovieModalOpen}
         onClose={() => setIsCreateMovieModalOpen(false)}
         onSubmit={handleCreateMovie}
+        defaultType={createModalMediaType}
       />
 
       {/* Edit Movie Modal */}
@@ -316,8 +394,46 @@ export default function DashboardPage() {
       {/* HLS Playback Modal */}
       <MoviePlaybackModal
         movie={playbackMovie}
+        episode={playbackEpisode?.episode}
         isOpen={!!playbackMovie}
-        onClose={() => setPlaybackMovie(null)}
+        onClose={() => {
+          setPlaybackMovie(null);
+          setPlaybackEpisode(null);
+        }}
+      />
+
+      {/* Series Seasons & Episodes Studio Modal */}
+      <SeriesEpisodesModal
+        series={episodesModalSeries}
+        isOpen={!!episodesModalSeries}
+        onClose={() => setEpisodesModalSeries(null)}
+        onUploadForEpisode={(s, ep) => {
+          setEpisodesModalSeries(null);
+          setTargetMovieForUpload(s);
+          setTargetEpisodeForUpload(ep);
+          setCurrentTab("upload");
+        }}
+        onPlayEpisode={(s, ep) => {
+          setPlaybackEpisode({ series: s, episode: ep });
+          setPlaybackMovie(s);
+        }}
+        onRefreshSeries={async () => {
+          await fetchData();
+          if (episodesModalSeries) {
+            try {
+              const res = await api.movies.getById(episodesModalSeries._id);
+              if (res.data) setEpisodesModalSeries(res.data);
+            } catch (e) {}
+          }
+        }}
+      />
+
+      {/* Confirm Delete & Purge Modal */}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTargetMovie}
+        movie={deleteTargetMovie}
+        onClose={() => setDeleteTargetMovie(null)}
+        onConfirm={handleConfirmDelete}
       />
 
       {/* Add R2 Storage Modal */}

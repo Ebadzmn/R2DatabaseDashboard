@@ -20,16 +20,34 @@ export interface UploadProgressCallback {
 export class DirectR2Uploader {
   private file: File;
   private movieId?: string;
+  private episodeId?: string;
+  private seasonNumber?: number;
+  private episodeNumber?: number;
+  private storageAccountId?: string;
   private onProgress?: UploadProgressCallback;
   private abortController: AbortController;
   private sessionId?: string;
   private isAborted = false;
   private useBackendProxy = false;
 
-  constructor(file: File, movieId?: string, onProgress?: UploadProgressCallback) {
+  constructor(
+    file: File,
+    movieId?: string,
+    storageAccountId?: string,
+    onProgress?: UploadProgressCallback,
+    options?: {
+      episodeId?: string;
+      seasonNumber?: number;
+      episodeNumber?: number;
+    }
+  ) {
     this.file = file;
     this.movieId = movieId;
+    this.storageAccountId = storageAccountId;
     this.onProgress = onProgress;
+    this.episodeId = options?.episodeId;
+    this.seasonNumber = options?.seasonNumber;
+    this.episodeNumber = options?.episodeNumber;
     this.abortController = new AbortController();
   }
 
@@ -71,6 +89,10 @@ export class DirectR2Uploader {
       fileSize: this.file.size,
       contentType: this.file.type || "video/mp4",
       movieId: this.movieId,
+      episodeId: this.episodeId,
+      seasonNumber: this.seasonNumber,
+      episodeNumber: this.episodeNumber,
+      storageAccountId: this.storageAccountId || undefined,
       partCount: isMultipart ? totalParts : undefined,
     });
 

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { IMovie, PlaybackResponse } from "@/lib/types";
+import { IMovie, IEpisode, PlaybackResponse } from "@/lib/types";
 import { api } from "@/lib/api-client";
 import {
   Play,
@@ -20,26 +20,34 @@ import { CustomHlsPlayer } from "@/components/player/CustomHlsPlayer";
 
 interface MoviePlaybackModalProps {
   movie: IMovie | null;
+  episode?: IEpisode | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export function MoviePlaybackModal({
   movie,
+  episode,
   isOpen,
   onClose,
 }: MoviePlaybackModalProps) {
   const [playbackData, setPlaybackData] = useState<PlaybackResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedHls, setCopiedHls] = useState(false);
+  const [copiedSource, setCopiedSource] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (movie && isOpen) {
       setLoading(true);
       setError(null);
-      api.movies
-        .getPlayback(movie._id)
+
+      const fetchPromise =
+        episode && movie.type === "SERIES"
+          ? api.movies.getEpisodePlayback(movie._id, episode.seasonNumber, episode.episodeNumber)
+          : api.movies.getPlayback(movie._id);
+
+      fetchPromise
         .then((res) => {
           setPlaybackData(res.data);
         })
@@ -53,13 +61,21 @@ export function MoviePlaybackModal({
       setPlaybackData(null);
       setError(null);
     }
-  }, [movie, isOpen]);
+  }, [movie, episode, isOpen]);
 
-  const handleCopy = () => {
+  const handleCopyHls = () => {
     if (playbackData?.url) {
       navigator.clipboard.writeText(playbackData.url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setCopiedHls(true);
+      setTimeout(() => setCopiedHls(false), 2500);
+    }
+  };
+
+  const handleCopySource = () => {
+    if (playbackData?.sourceUrl) {
+      navigator.clipboard.writeText(playbackData.sourceUrl);
+      setCopiedSource(true);
+      setTimeout(() => setCopiedSource(false), 2500);
     }
   };
 
@@ -89,7 +105,7 @@ export function MoviePlaybackModal({
           <>
             {/* Premium Custom HLS Player */}
             {(() => {
-              const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
+              const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5003/api";
               const streamProxyUrl = playbackData.proxyUrl
                 ? playbackData.proxyUrl.startsWith("http")
                   ? playbackData.proxyUrl
@@ -107,24 +123,73 @@ export function MoviePlaybackModal({
               );
             })()}
 
-            {/* Stream URL Box */}
-            <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Play className="w-3.5 h-3.5 text-emerald-400 fill-current" />
-                  HLS Master Playlist URL (<code className="text-emerald-400 font-mono">master.m3u8</code>)
-                </span>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow transition-all"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? "Copied Link" : "Copy Stream URL"}</span>
-                </button>
-              </div>
+            {/* URL Boxes Section */}
+            <div className="space-y-3">
+              {/* Public Direct Source Video URL Box */}
+              {playbackData.sourceUrl && (
+                <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase">
+                        Public Development URL
+                      </span>
+                      <span className="text-xs font-semibold text-slate-200">
+                        Direct Video File URL (MP4 / Source)
+                      </span>
+                    </div>
 
-              <div className="p-2.5 rounded-lg bg-black/60 border border-slate-800 font-mono text-xs text-slate-300 break-all select-all">
-                {playbackData.url}
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={playbackData.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
+                        title="Open file in new tab"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Open</span>
+                      </a>
+                      <button
+                        onClick={handleCopySource}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow transition-all cursor-pointer"
+                      >
+                        {copiedSource ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedSource ? "Copied Link" : "Copy Video Link"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-black/60 border border-slate-800 font-mono text-xs text-purple-300 break-all select-all">
+                    {playbackData.sourceUrl}
+                  </div>
+                </div>
+              )}
+
+              {/* HLS Master Playlist URL */}
+              <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase">
+                      HLS Adaptive Stream
+                    </span>
+                    <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                      <Play className="w-3.5 h-3.5 text-emerald-400 fill-current" />
+                      Master Playlist URL (<code className="text-emerald-400 font-mono">master.m3u8</code>)
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={handleCopyHls}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow transition-all cursor-pointer"
+                  >
+                    {copiedHls ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedHls ? "Copied Link" : "Copy Stream URL"}</span>
+                  </button>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-black/60 border border-slate-800 font-mono text-xs text-emerald-300 break-all select-all">
+                  {playbackData.url}
+                </div>
               </div>
             </div>
 

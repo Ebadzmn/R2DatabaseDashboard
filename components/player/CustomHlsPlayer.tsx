@@ -142,9 +142,10 @@ export function CustomHlsPlayer({
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              // If proxy failed, try directSrc if available
               if (directSrc && hls.url !== directSrc) {
+                console.warn("HLS proxy failed, attempting direct R2 public stream URL:", directSrc);
                 hls.loadSource(directSrc);
+                hls.startLoad();
               } else {
                 hls.startLoad();
               }
@@ -154,7 +155,7 @@ export function CustomHlsPlayer({
               break;
             default:
               hls.destroy();
-              setErrorMessage("Fatal streaming playback error. Please try again.");
+              setErrorMessage("Video playback stream could not be loaded. Please ensure transcoding is completed.");
               break;
           }
         }
