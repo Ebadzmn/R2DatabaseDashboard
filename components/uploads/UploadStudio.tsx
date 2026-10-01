@@ -288,7 +288,12 @@ export function UploadStudio({
           fileName: session.fileName,
         });
 
-        if (session.status === "COMPLETED") {
+        // Remote download and ingestion to R2 is complete
+        if (
+          session.status === "UPLOADED" ||
+          session.status === "PROCESSING" ||
+          session.status === "COMPLETED"
+        ) {
           if (remotePollIntervalRef.current) {
             clearInterval(remotePollIntervalRef.current);
             remotePollIntervalRef.current = null;
@@ -297,7 +302,7 @@ export function UploadStudio({
           setCompletedUpload(true);
           success(
             "Remote Download Completed",
-            `Video stream successfully saved to Cloudflare R2 and dispatched to BullMQ HLS transcoding!`
+            `Video stream successfully saved to Cloudflare R2 and dispatched to HLS transcoding!`
           );
           onUploadSuccess();
         } else if (session.status === "FAILED") {
@@ -306,7 +311,10 @@ export function UploadStudio({
             remotePollIntervalRef.current = null;
           }
           setIsRemoteDownloading(false);
-          error("Remote Download Failed", session.errorMessage || "Remote video download failed.");
+          error(
+            "Remote Download Failed",
+            (session as any).error || (session as any).errorMessage || "Remote video download failed."
+          );
         } else if (session.status === "ABORTED") {
           if (remotePollIntervalRef.current) {
             clearInterval(remotePollIntervalRef.current);

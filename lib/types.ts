@@ -212,8 +212,11 @@ export interface CreateStorageInput extends TestStorageInput {
 
 export type UploadSessionStatus =
   | "INITIALIZED"
-  | "UPLOADING"
   | "DOWNLOADING"
+  | "UPLOADING"
+  | "COMPLETING"
+  | "UPLOADED"
+  | "PROCESSING"
   | "COMPLETED"
   | "FAILED"
   | "ABORTED";
