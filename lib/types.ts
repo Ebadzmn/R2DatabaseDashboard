@@ -23,6 +23,7 @@ export interface IEpisode {
   status: MovieStatus;
   processingProgress?: number;
   processingError?: string;
+  screenshots?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +58,7 @@ export interface IMovie {
   status: MovieStatus;
   processingProgress?: number;
   processingError?: string;
+  screenshots?: string[];
   createdAt: string;
   updatedAt: string;
 }

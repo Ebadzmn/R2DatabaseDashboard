@@ -16,7 +16,7 @@ import {
 } from "./types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5003/api";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
 
 class ApiError extends Error {
   public code?: string;
@@ -71,8 +71,16 @@ async function request<T>(
         window.dispatchEvent(new Event("auth_unauthorized"));
       }
 
+      let errMessage = json.message || `Request failed with status ${res.status}`;
+      if (json.details && Array.isArray(json.details) && json.details.length > 0) {
+        const detailMsgs = json.details
+          .map((d) => (d && d.message ? `${d.path ? d.path + ": " : ""}${d.message}` : (typeof d === "string" ? d : JSON.stringify(d))))
+          .join(", ");
+        errMessage = `${errMessage}: ${detailMsgs}`;
+      }
+
       throw new ApiError(
-        json.message || `Request failed with status ${res.status}`,
+        errMessage,
         res.status,
         json.code,
         json.details
@@ -203,6 +211,57 @@ export const api = {
         episodes?: any[];
       }>(`/admin/movies/${id}/status`),
     getPlayback: (id: string) => request<PlaybackResponse>(`/movies/${id}/playback`),
+    uploadScreenshot: async (
+      movieId: string,
+      file: File,
+      options?: { seasonNumber?: number; episodeNumber?: number }
+    ) => {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      return request<{ url: string; screenshots: string[] }>(
+        `/admin/movies/${movieId}/screenshots/upload`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            image: base64,
+            filename: file.name,
+            seasonNumber: options?.seasonNumber,
+            episodeNumber: options?.episodeNumber,
+          }),
+        }
+      );
+    },
+    uploadImage: async (file: File) => {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      return request<{ url: string; key: string }>("/admin/movies/upload-image", {
+        method: "POST",
+        body: JSON.stringify({
+          image: base64,
+          filename: file.name,
+        }),
+      });
+    },
+    captureScreenshots: (id: string, seasonNumber?: number, episodeNumber?: number) => {
+      const qs =
+        seasonNumber !== undefined && episodeNumber !== undefined
+          ? `?season=${seasonNumber}&episode=${episodeNumber}`
+          : "";
+      return request<{ screenshots: string[] }>(
+        `/admin/movies/${id}/screenshots/capture${qs}`,
+        { method: "POST" }
+      );
+    },
     // Series Episodes
     addEpisode: (
       id: string,

@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { api } from "@/lib/api-client";
 import { Modal } from "@/components/ui/Modal";
 import { IMovie, MovieType, ITmdbDetails } from "@/lib/types";
-import { Film, Image, Calendar, Tag, FileText, Check, Sparkles, Star, User, Video, ExternalLink } from "lucide-react";
+import { Film, Image, Calendar, Tag, FileText, Check, Sparkles, Star, User, Video, ExternalLink, Trash2, Plus, Edit2, UploadCloud } from "lucide-react";
 import { TmdbSearchModal } from "./TmdbSearchModal";
+import { resolveImageUrl } from "@/lib/image-url";
 
 interface MovieModalProps {
   isOpen: boolean;
@@ -37,6 +39,39 @@ export function MovieModal({
   const [tmdbId, setTmdbId] = useState<number | undefined>();
   const [totalSeasons, setTotalSeasons] = useState<number | undefined>(1);
   const [cast, setCast] = useState<{ name: string; character?: string; image?: string }[]>([]);
+  const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [newScreenshotUrl, setNewScreenshotUrl] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false);
+
+  const handleScreenshotFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingScreenshot(true);
+      if (initialData?._id) {
+        const res = await api.movies.uploadScreenshot(initialData._id, file);
+        if (res.data?.screenshots) {
+          setScreenshots(res.data.screenshots);
+        } else if (res.data?.url) {
+          setScreenshots((prev) => [...prev, res.data.url]);
+        }
+      } else {
+        const res = await api.movies.uploadImage(file);
+        if (res.data?.url) {
+          setScreenshots((prev) => [...prev, res.data.url]);
+        }
+      }
+      e.target.value = "";
+    } catch (err: any) {
+      alert("Screenshot upload failed: " + (err.message || "Could not upload image"));
+    } finally {
+      setIsUploadingScreenshot(false);
+    }
+  };
+  const [editingUrl, setEditingUrl] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTmdbSearchOpen, setIsTmdbSearchOpen] = useState(false);
@@ -57,6 +92,7 @@ export function MovieModal({
       setTmdbId(initialData.tmdbId);
       setTotalSeasons(initialData.totalSeasons || 1);
       setCast(initialData.cast || []);
+      setScreenshots(initialData.screenshots || []);
     } else {
       setTitle("");
       setDescription("");
@@ -72,6 +108,7 @@ export function MovieModal({
       setTmdbId(undefined);
       setTotalSeasons(1);
       setCast([]);
+      setScreenshots([]);
     }
   }, [initialData, isOpen, defaultType]);
 
@@ -117,6 +154,7 @@ export function MovieModal({
         tmdbId,
         totalSeasons: type === "SERIES" ? (totalSeasons ? Number(totalSeasons) : 1) : undefined,
         cast,
+        screenshots: screenshots.filter((s) => s.trim().length > 0),
       });
 
       onClose();
@@ -348,6 +386,203 @@ export function MovieModal({
               )}
             </div>
           )}
+
+          {/* Screenshots Manager (View, Add, Edit, Delete, Set as Poster/Backdrop) */}
+          <div className="space-y-2.5 p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Film className="w-4 h-4 text-indigo-400" />
+                <span className="text-xs font-semibold text-slate-200">
+                  Preview Screenshots ({screenshots.length})
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400">
+                Auto-captured or custom URLs
+              </span>
+            </div>
+
+            {screenshots.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {screenshots.map((url, index) => (
+                  <div
+                    key={index}
+                    className="group relative rounded-xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video shadow-md flex flex-col justify-between"
+                  >
+                    <img
+                      src={resolveImageUrl(url, initialData?._id)}
+                      alt={`Screenshot ${index + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        const filename = url.split("/").pop() || `screenshot_${index + 1}.jpg`;
+                        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api";
+                        const proxyUrl = initialData?._id
+                          ? `${apiBase}/movies/${initialData._id}/screenshots/${filename}`
+                          : "";
+                        if (proxyUrl && target.src !== proxyUrl) {
+                          target.src = proxyUrl;
+                        }
+                      }}
+                    />
+
+                    {/* Top badges & action buttons */}
+                    <div className="absolute top-1.5 inset-x-1.5 flex items-center justify-between opacity-90">
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-black/75 text-slate-300 border border-white/10">
+                        #{index + 1}
+                      </span>
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 p-0.5 rounded-lg backdrop-blur-xs">
+                        <button
+                          type="button"
+                          onClick={() => setPoster(url)}
+                          title="Set as Poster"
+                          className="px-1.5 py-0.5 text-[9px] font-medium rounded bg-indigo-600/80 hover:bg-indigo-600 text-white transition-all cursor-pointer"
+                        >
+                          Poster
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBackdrop(url)}
+                          title="Set as Backdrop"
+                          className="px-1.5 py-0.5 text-[9px] font-medium rounded bg-purple-600/80 hover:bg-purple-600 text-white transition-all cursor-pointer"
+                        >
+                          Backdrop
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setScreenshots(screenshots.filter((_, i) => i !== index));
+                            if (editingIndex === index) setEditingIndex(null);
+                          }}
+                          title="Delete screenshot"
+                          className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded transition-all cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bottom quick view & edit link */}
+                    <div className="absolute bottom-1.5 inset-x-1.5 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingIndex(index);
+                          setEditingUrl(url);
+                        }}
+                        className="px-1.5 py-0.5 rounded text-[9px] bg-slate-900/90 text-slate-300 border border-slate-700 hover:bg-slate-800 flex items-center gap-1 transition-all cursor-pointer"
+                      >
+                        <Edit2 className="w-2.5 h-2.5 text-amber-400" /> Edit URL
+                      </button>
+                      <a
+                        href={resolveImageUrl(url, initialData?._id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 rounded bg-slate-900/90 text-slate-300 border border-slate-700 hover:bg-slate-800 transition-all"
+                        title="Open full size"
+                      >
+                        <ExternalLink className="w-2.5 h-2.5 text-indigo-300" />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-3 text-center rounded-xl bg-slate-950/40 border border-dashed border-slate-800 text-[11px] text-slate-500">
+                No screenshots yet. They are captured automatically during transcoding, or you can add image URLs below.
+              </div>
+            )}
+
+            {/* Inline edit active screenshot */}
+            {editingIndex !== null && (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-amber-300 font-medium">
+                  <span>Editing Screenshot #{editingIndex + 1} URL:</span>
+                  <button
+                    type="button"
+                    onClick={() => setEditingIndex(null)}
+                    className="text-slate-400 hover:text-slate-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={editingUrl}
+                    onChange={(e) => setEditingUrl(e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-amber-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editingUrl.trim()) {
+                        const updated = [...screenshots];
+                        updated[editingIndex] = editingUrl.trim();
+                        setScreenshots(updated);
+                      }
+                      setEditingIndex(null);
+                    }}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    Update
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Add new screenshot URL */}
+            <div className="flex gap-2 pt-1">
+              <input
+                type="url"
+                placeholder="Add screenshot image URL (https://...)"
+                value={newScreenshotUrl}
+                onChange={(e) => setNewScreenshotUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (newScreenshotUrl.trim()) {
+                      setScreenshots([...screenshots, newScreenshotUrl.trim()]);
+                      setNewScreenshotUrl("");
+                    }
+                  }
+                }}
+                className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500/80 transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newScreenshotUrl.trim()) {
+                    setScreenshots([...screenshots, newScreenshotUrl.trim()]);
+                    setNewScreenshotUrl("");
+                  }
+                }}
+                disabled={!newScreenshotUrl.trim()}
+                className="px-3 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleScreenshotFileChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingScreenshot}
+                className="px-3.5 py-1.5 bg-emerald-600/90 hover:bg-emerald-600 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm shrink-0"
+                title="Upload screenshot image from your device"
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>{isUploadingScreenshot ? "Uploading..." : "Upload File"}</span>
+              </button>
+            </div>
+          </div>
 
           {/* Cast Preview */}
           {cast.length > 0 && (
