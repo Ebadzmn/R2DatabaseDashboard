@@ -21,6 +21,7 @@ import { SeriesEpisodesModal } from "@/components/movies/SeriesEpisodesModal";
 import { StorageList } from "@/components/storage/StorageList";
 import { AddStorageModal } from "@/components/storage/AddStorageModal";
 import { UploadStudio } from "@/components/uploads/UploadStudio";
+import { UserManagement } from "@/components/users/UserManagement";
 import { ConfirmDeleteModal } from "@/components/ui/ConfirmDeleteModal";
 import { IEpisode } from "@/lib/types";
 
@@ -35,6 +36,7 @@ export default function DashboardPage() {
   // Data states
   const [movies, setMovies] = useState<IMovie[]>([]);
   const [storages, setStorages] = useState<IStorageAccount[]>([]);
+  const [totalUsersCount, setTotalUsersCount] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
 
   // Modals
@@ -60,12 +62,16 @@ export default function DashboardPage() {
   const fetchData = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const [moviesRes, storageRes] = await Promise.all([
+      const [moviesRes, storageRes, usersStatsRes] = await Promise.all([
         api.movies.getAll({ limit: 100 }),
         api.storage.getAll(),
+        api.users.getStats().catch(() => null),
       ]);
       setMovies(moviesRes.data || []);
       setStorages(storageRes.data || []);
+      if (usersStatsRes?.data?.totalUsers !== undefined) {
+        setTotalUsersCount(usersStatsRes.data.totalUsers);
+      }
     } catch (err: any) {
       console.error("Failed to load dashboard data:", err);
     } finally {
@@ -253,6 +259,11 @@ export default function DashboardPage() {
           title: "Direct-to-R2 Upload Station",
           subtitle: "Direct multipart presigned uploads bypassing server memory limits",
         };
+      case "users":
+        return {
+          title: "Users & Guests Studio",
+          subtitle: "Monitor registered members, guest device accounts, and manage block / unblock access",
+        };
     }
   };
 
@@ -282,6 +293,7 @@ export default function DashboardPage() {
         activeStoragesCount={activeStoragesCount}
         totalMoviesCount={singleMovies.length}
         totalSeriesCount={seriesList.length}
+        totalUsersCount={totalUsersCount}
       />
 
       {/* Main Content Area */}
@@ -371,6 +383,8 @@ export default function DashboardPage() {
               onNavigateSeries={() => setCurrentTab("series")}
             />
           )}
+
+          {currentTab === "users" && <UserManagement />}
         </main>
       </div>
 

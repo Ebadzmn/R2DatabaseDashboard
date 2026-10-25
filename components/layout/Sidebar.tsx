@@ -10,9 +10,10 @@ import {
   ChevronRight,
   ShieldCheck,
   Radio,
+  Users,
 } from "lucide-react";
 
-export type NavTab = "overview" | "movies" | "series" | "storage" | "upload";
+export type NavTab = "overview" | "movies" | "series" | "storage" | "upload" | "users";
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -22,6 +23,7 @@ interface SidebarProps {
   activeStoragesCount?: number;
   totalMoviesCount?: number;
   totalSeriesCount?: number;
+  totalUsersCount?: number;
 }
 
 export function Sidebar({
@@ -32,6 +34,7 @@ export function Sidebar({
   activeStoragesCount = 0,
   totalMoviesCount = 0,
   totalSeriesCount = 0,
+  totalUsersCount = 0,
 }: SidebarProps) {
   const navItems = [
     {
@@ -63,6 +66,12 @@ export function Sidebar({
       label: "Direct R2 Upload",
       icon: UploadCloud,
       badge: "Fast",
+    },
+    {
+      id: "users" as NavTab,
+      label: "Users & Guests",
+      icon: Users,
+      badge: totalUsersCount > 0 ? totalUsersCount : null,
     },
   ];
 

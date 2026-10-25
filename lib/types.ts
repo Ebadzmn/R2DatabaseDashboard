@@ -249,3 +249,41 @@ export interface InitRemoteDownloadResponse {
   fileSize: number;
   status: string;
 }
+
+// User Management Types
+export type UserStatus = "ACTIVE" | "BLOCKED";
+
+export interface IAppUser {
+  id: string;
+  _id?: string;
+  displayName: string;
+  email?: string;
+  avatarUrl?: string;
+  isGuest: boolean;
+  status: UserStatus;
+  blockReason?: string;
+  blockedAt?: string;
+  deviceId?: string;
+  lastLoginAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface IUserStats {
+  totalUsers: number;
+  activeUsers: number;
+  blockedUsers: number;
+  guestUsers: number;
+  registeredUsers: number;
+}
+
+export interface UserQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: "ALL" | "ACTIVE" | "BLOCKED";
+  type?: "ALL" | "REGISTERED" | "GUEST";
+  sortBy?: "createdAt" | "lastLoginAt" | "displayName" | "email";
+  sortOrder?: "asc" | "desc";
+}
+

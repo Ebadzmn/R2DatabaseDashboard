@@ -13,6 +13,9 @@ import {
   ITmdbDetails,
   IUploadSession,
   InitRemoteDownloadResponse,
+  IAppUser,
+  IUserStats,
+  UserQueryParams,
 } from "./types";
 
 const API_BASE_URL =
@@ -377,6 +380,45 @@ export const api = {
           rating: number;
         }>;
       }>(`/admin/tmdb/tv/${tvId}/season/${seasonNumber}`),
+  },
+
+  // End-Users & Guest Management
+  users: {
+    getAll: (params: UserQueryParams = {}) => {
+      const query = new URLSearchParams();
+      if (params.page) query.append("page", params.page.toString());
+      if (params.limit) query.append("limit", params.limit.toString());
+      if (params.search) query.append("search", params.search);
+      if (params.status && params.status !== "ALL") query.append("status", params.status);
+      if (params.type && params.type !== "ALL") query.append("type", params.type);
+      if (params.sortBy) query.append("sortBy", params.sortBy);
+      if (params.sortOrder) query.append("sortOrder", params.sortOrder);
+
+      const qs = query.toString();
+      return request<{ users: IAppUser[]; stats: IUserStats }>(
+        `/admin/users${qs ? `?${qs}` : ""}`
+      );
+    },
+    getStats: () => request<IUserStats>("/admin/users/stats"),
+    getById: (id: string) => request<IAppUser>(`/admin/users/${id}`),
+    block: (id: string, reason?: string) =>
+      request<IAppUser>(`/admin/users/${id}/block`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      }),
+    unblock: (id: string) =>
+      request<IAppUser>(`/admin/users/${id}/unblock`, {
+        method: "POST",
+      }),
+    updateStatus: (id: string, status: "ACTIVE" | "BLOCKED", reason?: string) =>
+      request<IAppUser>(`/admin/users/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, reason }),
+      }),
+    delete: (id: string) =>
+      request<{ id: string; deleted: boolean }>(`/admin/users/${id}`, {
+        method: "DELETE",
+      }),
   },
 };
 

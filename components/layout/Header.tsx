@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api-client";
 import {
@@ -29,9 +30,15 @@ export function Header({
   onOpenNewSeries,
   onOpenUpload,
 }: HeaderProps) {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [healthStatus, setHealthStatus] = useState<"ONLINE" | "OFFLINE" | "CHECKING">("CHECKING");
   const [uptime, setUptime] = useState<number | null>(null);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -159,8 +166,8 @@ export function Header({
           </div>
 
           <button
-            onClick={logout}
-            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors"
+            onClick={handleLogout}
+            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer"
             title="Log out"
           >
             <LogOut className="w-4 h-4" />
