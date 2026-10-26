@@ -206,8 +206,15 @@ export function MovieList({
 
                 <div className="absolute top-3 left-3">{getStatusBadge(movie.status, movie.processingProgress)}</div>
 
-                <div className="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-semibold text-slate-300 border border-white/10 uppercase">
-                  {movie.type}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  {movie.category && (
+                    <span className="px-2 py-0.5 rounded-md bg-indigo-600/80 backdrop-blur-md text-[10px] font-semibold text-white border border-indigo-400/30 uppercase">
+                      {movie.category}
+                    </span>
+                  )}
+                  <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-semibold text-slate-300 border border-white/10 uppercase">
+                    {movie.type}
+                  </span>
                 </div>
 
                 {movie.status === "READY" && (

@@ -211,9 +211,16 @@ export function SeriesList({
 
                 <div className="absolute top-3 left-3">{getStatusBadge(item.status, item.processingProgress)}</div>
 
-                <div className="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-purple-950/80 backdrop-blur-md text-[10px] font-semibold text-purple-300 border border-purple-500/30 uppercase flex items-center gap-1">
-                  <Layers className="w-3 h-3" />
-                  <span>{item.episodes?.length || 0} EPS</span>
+                <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  {item.category && (
+                    <span className="px-2 py-0.5 rounded-md bg-indigo-600/80 backdrop-blur-md text-[10px] font-semibold text-white border border-indigo-400/30 uppercase">
+                      {item.category}
+                    </span>
+                  )}
+                  <div className="px-2 py-0.5 rounded-md bg-purple-950/80 backdrop-blur-md text-[10px] font-semibold text-purple-300 border border-purple-500/30 uppercase flex items-center gap-1">
+                    <Layers className="w-3 h-3" />
+                    <span>{item.episodes?.length || 0} EPS</span>
+                  </div>
                 </div>
 
                 {item.status === "READY" && (

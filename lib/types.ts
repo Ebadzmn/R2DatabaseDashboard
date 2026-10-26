@@ -36,6 +36,8 @@ export interface IMovie {
   poster?: string;
   backdrop?: string;
   type: MovieType;
+  category?: string;
+  categoryId?: string;
   releaseYear?: number;
   genres: string[];
   duration?: number;
@@ -159,6 +161,7 @@ export interface MovieQueryParams {
   search?: string;
   status?: MovieStatus;
   genre?: string;
+  category?: string;
   year?: number;
   sortBy?: "createdAt" | "title" | "releaseYear" | "duration";
   sortOrder?: "asc" | "desc";
@@ -285,5 +288,33 @@ export interface UserQueryParams {
   type?: "ALL" | "REGISTERED" | "GUEST";
   sortBy?: "createdAt" | "lastLoginAt" | "displayName" | "email";
   sortOrder?: "asc" | "desc";
+}
+
+export interface ICategory {
+  _id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  description?: string;
+  order: number;
+  isActive: boolean;
+  movieCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface IGenre {
+  _id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  gradientStart?: string;
+  gradientEnd?: string;
+  description?: string;
+  order: number;
+  isActive: boolean;
+  count?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 

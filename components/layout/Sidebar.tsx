@@ -11,9 +11,11 @@ import {
   ShieldCheck,
   Radio,
   Users,
+  Layers,
+  Tag,
 } from "lucide-react";
 
-export type NavTab = "overview" | "movies" | "series" | "storage" | "upload" | "users";
+export type NavTab = "overview" | "movies" | "series" | "categories" | "genres" | "storage" | "upload" | "users";
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -24,6 +26,8 @@ interface SidebarProps {
   totalMoviesCount?: number;
   totalSeriesCount?: number;
   totalUsersCount?: number;
+  categoriesCount?: number;
+  genresCount?: number;
 }
 
 export function Sidebar({
@@ -35,6 +39,8 @@ export function Sidebar({
   totalMoviesCount = 0,
   totalSeriesCount = 0,
   totalUsersCount = 0,
+  categoriesCount = 0,
+  genresCount = 0,
 }: SidebarProps) {
   const navItems = [
     {
@@ -54,6 +60,18 @@ export function Sidebar({
       label: "Series & Shows",
       icon: Tv,
       badge: totalSeriesCount > 0 ? totalSeriesCount : null,
+    },
+    {
+      id: "categories" as NavTab,
+      label: "Categories",
+      icon: Layers,
+      badge: categoriesCount > 0 ? categoriesCount : null,
+    },
+    {
+      id: "genres" as NavTab,
+      label: "Genres",
+      icon: Tag,
+      badge: genresCount > 0 ? genresCount : null,
     },
     {
       id: "storage" as NavTab,

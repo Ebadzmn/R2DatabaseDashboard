@@ -22,6 +22,8 @@ import { StorageList } from "@/components/storage/StorageList";
 import { AddStorageModal } from "@/components/storage/AddStorageModal";
 import { UploadStudio } from "@/components/uploads/UploadStudio";
 import { UserManagement } from "@/components/users/UserManagement";
+import { CategoryManagement } from "@/components/categories/CategoryManagement";
+import { GenreManagement } from "@/components/genres/GenreManagement";
 import { ConfirmDeleteModal } from "@/components/ui/ConfirmDeleteModal";
 import { IEpisode } from "@/lib/types";
 
@@ -37,6 +39,8 @@ export default function DashboardPage() {
   const [movies, setMovies] = useState<IMovie[]>([]);
   const [storages, setStorages] = useState<IStorageAccount[]>([]);
   const [totalUsersCount, setTotalUsersCount] = useState(0);
+  const [categoriesCount, setCategoriesCount] = useState(0);
+  const [genresCount, setGenresCount] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
 
   // Modals
@@ -62,15 +66,23 @@ export default function DashboardPage() {
   const fetchData = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const [moviesRes, storageRes, usersStatsRes] = await Promise.all([
+      const [moviesRes, storageRes, usersStatsRes, categoriesRes, genresRes] = await Promise.all([
         api.movies.getAll({ limit: 100 }),
         api.storage.getAll(),
         api.users.getStats().catch(() => null),
+        api.categories.getAll(true).catch(() => null),
+        api.genres.getAll(true).catch(() => null),
       ]);
       setMovies(moviesRes.data || []);
       setStorages(storageRes.data || []);
       if (usersStatsRes?.data?.totalUsers !== undefined) {
         setTotalUsersCount(usersStatsRes.data.totalUsers);
+      }
+      if (categoriesRes?.data) {
+        setCategoriesCount(categoriesRes.data.length);
+      }
+      if (genresRes?.data) {
+        setGenresCount(genresRes.data.length);
       }
     } catch (err: any) {
       console.error("Failed to load dashboard data:", err);
@@ -249,6 +261,16 @@ export default function DashboardPage() {
           title: "Series & Shows Studio",
           subtitle: "Manage TV series, episodes, TMDB auto-imported seasons, and streaming",
         };
+      case "categories":
+        return {
+          title: "Category Studio",
+          subtitle: "Create, reorder, and manage dynamic categories synced with CineCore app & web",
+        };
+      case "genres":
+        return {
+          title: "Genre Studio",
+          subtitle: "Curate dynamic genre capsules, gradient themes, and iconography for CineCore",
+        };
       case "storage":
         return {
           title: "Cloudflare R2 Storage Nodes",
@@ -294,6 +316,8 @@ export default function DashboardPage() {
         totalMoviesCount={singleMovies.length}
         totalSeriesCount={seriesList.length}
         totalUsersCount={totalUsersCount}
+        categoriesCount={categoriesCount}
+        genresCount={genresCount}
       />
 
       {/* Main Content Area */}
@@ -358,6 +382,14 @@ export default function DashboardPage() {
               onRefresh={fetchData}
               isLoading={loadingData}
             />
+          )}
+
+          {currentTab === "categories" && (
+            <CategoryManagement onCategoriesUpdated={fetchData} />
+          )}
+
+          {currentTab === "genres" && (
+            <GenreManagement onGenresUpdated={fetchData} />
           )}
 
           {currentTab === "storage" && (

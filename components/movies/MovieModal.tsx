@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api-client";
 import { Modal } from "@/components/ui/Modal";
-import { IMovie, MovieType, ITmdbDetails } from "@/lib/types";
+import { IMovie, MovieType, ITmdbDetails, ICategory, IGenre } from "@/lib/types";
 import { Film, Image, Calendar, Tag, FileText, Check, Sparkles, Star, User, Video, ExternalLink, Trash2, Plus, Edit2, UploadCloud } from "lucide-react";
 import { TmdbSearchModal } from "./TmdbSearchModal";
 import { resolveImageUrl } from "@/lib/image-url";
@@ -30,6 +30,9 @@ export function MovieModal({
   const [poster, setPoster] = useState("");
   const [backdrop, setBackdrop] = useState("");
   const [type, setType] = useState<MovieType>(defaultType);
+  const [category, setCategory] = useState<string>("");
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [availableGenres, setAvailableGenres] = useState<IGenre[]>([]);
   const [releaseYear, setReleaseYear] = useState<number | undefined>(new Date().getFullYear());
   const [genresInput, setGenresInput] = useState("");
   const [duration, setDuration] = useState<number | undefined>();
@@ -77,12 +80,37 @@ export function MovieModal({
   const [isTmdbSearchOpen, setIsTmdbSearchOpen] = useState(false);
 
   useEffect(() => {
+    api.categories.getAll(false).then((res) => {
+      setCategories(res.data || []);
+    }).catch(() => {});
+    api.genres.getAll(false).then((res) => {
+      setAvailableGenres(res.data || []);
+    }).catch(() => {});
+  }, []);
+
+  const toggleGenre = (genreName: string) => {
+    const list = genresInput
+      .split(",")
+      .map((g) => g.trim())
+      .filter(Boolean);
+    const lowerList = list.map((g) => g.toLowerCase());
+    const idx = lowerList.indexOf(genreName.toLowerCase());
+    if (idx >= 0) {
+      list.splice(idx, 1);
+    } else {
+      list.push(genreName);
+    }
+    setGenresInput(list.join(", "));
+  };
+
+  useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || "");
       setDescription(initialData.description || "");
       setPoster(initialData.poster || "");
       setBackdrop(initialData.backdrop || "");
       setType(initialData.type || defaultType);
+      setCategory(initialData.category || initialData.categoryId || "");
       setReleaseYear(initialData.releaseYear || new Date().getFullYear());
       setGenresInput(initialData.genres?.join(", ") || "");
       setDuration(initialData.duration ? Math.round(initialData.duration / 60) : undefined);
@@ -99,6 +127,7 @@ export function MovieModal({
       setPoster("");
       setBackdrop("");
       setType(defaultType);
+      setCategory(defaultType === "SERIES" ? "series" : "movies");
       setReleaseYear(new Date().getFullYear());
       setGenresInput("");
       setDuration(undefined);
@@ -145,6 +174,8 @@ export function MovieModal({
         poster: poster.trim() || undefined,
         backdrop: backdrop.trim() || undefined,
         type,
+        category: category.trim() || undefined,
+        categoryId: categories.find((c) => c.slug === category || c._id === category || c.name === category)?._id,
         releaseYear: releaseYear ? Number(releaseYear) : undefined,
         genres,
         duration: duration ? duration * 60 : undefined,
@@ -225,17 +256,42 @@ export function MovieModal({
             </div>
           </div>
 
-          {/* Type, Year, Duration, Rating, Total Seasons */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Type, Category, Year, Duration, Rating, Total Seasons */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">Type</label>
               <select
                 value={type}
-                onChange={(e) => setType(e.target.value as MovieType)}
+                onChange={(e) => {
+                  const newType = e.target.value as MovieType;
+                  setType(newType);
+                  if (!category || category === "movies" || category === "series") {
+                    setCategory(newType === "SERIES" ? "series" : "movies");
+                  }
+                }}
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500/80 transition-all"
               >
                 <option value="MOVIE">Movie</option>
                 <option value="SERIES">TV Series</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                <span>Category</span>
+                <span className="text-[10px] text-indigo-400 font-medium">App Pill</span>
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-900 border border-indigo-500/30 rounded-xl text-xs text-indigo-300 focus:outline-none focus:border-indigo-500/80 transition-all font-medium"
+              >
+                <option value="">-- Unassigned --</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat.slug}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -328,10 +384,12 @@ export function MovieModal({
 
           {/* Genres */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Genres <span className="text-slate-500 font-normal">(comma-separated)</span>
-            </label>
-            <div className="relative">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300">
+                Genres <span className="text-slate-500 font-normal">(select below or type comma-separated)</span>
+              </label>
+            </div>
+            <div className="relative mb-2">
               <Tag className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -341,6 +399,37 @@ export function MovieModal({
                 className="w-full pl-10 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500/80 transition-all"
               />
             </div>
+
+            {/* Clickable Dynamic Genre Chips from Database */}
+            {availableGenres.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80 max-h-28 overflow-y-auto">
+                {availableGenres.map((g) => {
+                  const currentSelectedList = genresInput
+                    .split(",")
+                    .map((s) => s.trim().toLowerCase());
+                  const isSelected = currentSelectedList.includes(g.name.toLowerCase());
+                  return (
+                    <button
+                      type="button"
+                      key={g._id}
+                      onClick={() => toggleGenre(g.name)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isSelected
+                          ? "bg-amber-500/20 border-amber-500 text-amber-300 shadow-sm"
+                          : "bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                      }`}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: g.gradientStart || "#F59E0B" }}
+                      />
+                      <span>{g.name}</span>
+                      {isSelected && <Check className="w-3 h-3 text-amber-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Poster & Backdrop URLs */}

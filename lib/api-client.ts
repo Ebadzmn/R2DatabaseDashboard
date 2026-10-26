@@ -16,6 +16,8 @@ import {
   IAppUser,
   IUserStats,
   UserQueryParams,
+  ICategory,
+  IGenre,
 } from "./types";
 
 const API_BASE_URL =
@@ -167,6 +169,46 @@ export const api = {
       request<IStorageAccount>(`/admin/storage/${id}/deactivate`, { method: "POST" }),
   },
 
+  // Categories Management
+  categories: {
+    getAll: (includeInactive: boolean = true) =>
+      request<ICategory[]>(`/admin/categories?includeInactive=${includeInactive}`),
+    getPublic: () => request<ICategory[]>("/categories"),
+    getById: (id: string) => request<ICategory>(`/admin/categories/${id}`),
+    create: (data: Partial<ICategory>) =>
+      request<ICategory>("/admin/categories", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Partial<ICategory>) =>
+      request<ICategory>(`/admin/categories/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      request<{ deleted: boolean }>(`/admin/categories/${id}`, { method: "DELETE" }),
+  },
+
+  // Genres Management
+  genres: {
+    getAll: (includeInactive: boolean = true) =>
+      request<IGenre[]>(`/admin/genres?includeInactive=${includeInactive}`),
+    getPublic: () => request<IGenre[]>("/genres"),
+    getById: (id: string) => request<IGenre>(`/admin/genres/${id}`),
+    create: (data: Partial<IGenre>) =>
+      request<IGenre>("/admin/genres", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Partial<IGenre>) =>
+      request<IGenre>(`/admin/genres/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      request<{ deleted: boolean }>(`/admin/genres/${id}`, { method: "DELETE" }),
+  },
+
   // Movies Management
   movies: {
     getAll: (params: MovieQueryParams = {}) => {
@@ -176,6 +218,7 @@ export const api = {
       if (params.search) query.append("search", params.search);
       if (params.status) query.append("status", params.status);
       if (params.genre) query.append("genre", params.genre);
+      if (params.category) query.append("category", params.category);
       if (params.year) query.append("year", params.year.toString());
       if (params.sortBy) query.append("sortBy", params.sortBy);
       if (params.sortOrder) query.append("sortOrder", params.sortOrder);
