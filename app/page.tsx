@@ -24,6 +24,7 @@ import { UploadStudio } from "@/components/uploads/UploadStudio";
 import { UserManagement } from "@/components/users/UserManagement";
 import { CategoryManagement } from "@/components/categories/CategoryManagement";
 import { GenreManagement } from "@/components/genres/GenreManagement";
+import { ContentManagement } from "@/components/content/ContentManagement";
 import { ConfirmDeleteModal } from "@/components/ui/ConfirmDeleteModal";
 import { IEpisode } from "@/lib/types";
 
@@ -189,6 +190,20 @@ export default function DashboardPage() {
     }
   };
 
+  const handleTogglePinMovie = async (movie: IMovie) => {
+    try {
+      const res = await api.movies.togglePin(movie._id);
+      const isPinned = res.data?.isPinned;
+      success(
+        isPinned ? "Pinned to Top" : "Unpinned",
+        `"${movie.title}" is ${isPinned ? "now pinned to the top of latest lists" : "unpinned"}.`
+      );
+      await fetchData();
+    } catch (err: any) {
+      error("Pin Action Failed", err.message || "Could not toggle pin status.");
+    }
+  };
+
   // Storage Handlers
   const handleRecalculateStorage = async (id: string) => {
     try {
@@ -260,6 +275,11 @@ export default function DashboardPage() {
         return {
           title: "Series & Shows Studio",
           subtitle: "Manage TV series, episodes, TMDB auto-imported seasons, and streaming",
+        };
+      case "content":
+        return {
+          title: "Home CMS & Highlights Studio",
+          subtitle: "Curate Top 10 Blockbusters, Top Series, Hero Slider banners, and Dynamic sections for CineCore",
         };
       case "categories":
         return {
@@ -358,6 +378,7 @@ export default function DashboardPage() {
                 setTargetMovieForUpload(m);
                 setCurrentTab("upload");
               }}
+              onTogglePin={handleTogglePinMovie}
               onOpenCreate={handleOpenCreateMovie}
               onRefresh={fetchData}
               isLoading={loadingData}
@@ -378,10 +399,15 @@ export default function DashboardPage() {
                 setCurrentTab("upload");
               }}
               onManageEpisodes={(s) => setEpisodesModalSeries(s)}
+              onTogglePin={handleTogglePinMovie}
               onOpenCreate={handleOpenCreateSeries}
               onRefresh={fetchData}
               isLoading={loadingData}
             />
+          )}
+
+          {currentTab === "content" && (
+            <ContentManagement />
           )}
 
           {currentTab === "categories" && (

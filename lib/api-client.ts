@@ -18,6 +18,8 @@ import {
   UserQueryParams,
   ICategory,
   IGenre,
+  IHeroBanner,
+  IHomeSection,
 } from "./types";
 
 const API_BASE_URL =
@@ -239,6 +241,8 @@ export const api = {
       }),
     delete: (id: string) =>
       request<void>(`/admin/movies/${id}`, { method: "DELETE" }),
+    togglePin: (id: string) =>
+      request<IMovie>(`/admin/movies/${id}/pin`, { method: "PATCH" }),
     process: (id: string) =>
       request<{ message: string }>(`/admin/movies/${id}/process`, { method: "POST" }),
     reprocess: (id: string) =>
@@ -461,6 +465,59 @@ export const api = {
     delete: (id: string) =>
       request<{ id: string; deleted: boolean }>(`/admin/users/${id}`, {
         method: "DELETE",
+      }),
+  },
+  banners: {
+    getAll: () => request<IHeroBanner[]>("/admin/banners"),
+    create: (data: Partial<IHeroBanner>) =>
+      request<IHeroBanner>("/admin/banners", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Partial<IHeroBanner>) =>
+      request<IHeroBanner>(`/admin/banners/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      request<{ deleted: boolean }>(`/admin/banners/${id}`, {
+        method: "DELETE",
+      }),
+    reorder: (orderedIds: string[]) =>
+      request<{ reordered: boolean }>("/admin/banners/reorder", {
+        method: "PUT",
+        body: JSON.stringify({ orderedIds }),
+      }),
+  },
+  sections: {
+    getAll: () => request<IHomeSection[]>("/admin/home-sections"),
+    getById: (id: string) => request<IHomeSection>(`/admin/home-sections/${id}`),
+    create: (data: Partial<IHomeSection>) =>
+      request<IHomeSection>("/admin/home-sections", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Partial<IHomeSection>) =>
+      request<IHomeSection>(`/admin/home-sections/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    updateItems: (
+      id: string,
+      items: Array<{ movieId: string; order?: number; customTag?: string }>
+    ) =>
+      request<IHomeSection>(`/admin/home-sections/${id}/items`, {
+        method: "PUT",
+        body: JSON.stringify({ items }),
+      }),
+    delete: (id: string) =>
+      request<{ deleted: boolean }>(`/admin/home-sections/${id}`, {
+        method: "DELETE",
+      }),
+    reorder: (orderedIds: string[]) =>
+      request<{ reordered: boolean }>("/admin/home-sections/reorder", {
+        method: "PUT",
+        body: JSON.stringify({ orderedIds }),
       }),
   },
 };

@@ -17,6 +17,7 @@ import {
   AlertCircle,
   CheckCircle2,
   UploadCloud,
+  Pin,
 } from "lucide-react";
 
 interface MovieListProps {
@@ -27,6 +28,7 @@ interface MovieListProps {
   onPlayMovie: (movie: IMovie) => void;
   onReprocessMovie: (id: string) => void;
   onUploadVideo?: (movie: IMovie) => void;
+  onTogglePin?: (movie: IMovie) => void;
   onOpenCreate: () => void;
   onRefresh: () => void;
   isLoading?: boolean;
@@ -40,6 +42,7 @@ export function MovieList({
   onPlayMovie,
   onReprocessMovie,
   onUploadVideo,
+  onTogglePin,
   onOpenCreate,
   onRefresh,
   isLoading = false,
@@ -207,6 +210,12 @@ export function MovieList({
                 <div className="absolute top-3 left-3">{getStatusBadge(movie.status, movie.processingProgress)}</div>
 
                 <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  {movie.isPinned && (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-500/90 backdrop-blur-md text-[10px] font-black text-black flex items-center gap-1 shadow-lg shadow-amber-500/30">
+                      <Pin className="w-2.5 h-2.5 fill-black" />
+                      PINNED
+                    </span>
+                  )}
                   {movie.category && (
                     <span className="px-2 py-0.5 rounded-md bg-indigo-600/80 backdrop-blur-md text-[10px] font-semibold text-white border border-indigo-400/30 uppercase">
                       {movie.category}
@@ -306,6 +315,19 @@ export function MovieList({
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
+                    {onTogglePin && (
+                      <button
+                        onClick={() => onTogglePin(movie)}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          movie.isPinned
+                            ? "text-amber-400 bg-amber-500/20 border border-amber-500/30 hover:bg-amber-500/30"
+                            : "text-slate-400 hover:text-amber-300 hover:bg-amber-500/10"
+                        }`}
+                        title={movie.isPinned ? "Unpin Movie" : "Pin Movie to Top"}
+                      >
+                        <Pin className={`w-4 h-4 ${movie.isPinned ? "fill-amber-400" : ""}`} />
+                      </button>
+                    )}
                     {onUploadVideo && (
                       <button
                         onClick={() => onUploadVideo(movie)}
@@ -363,8 +385,16 @@ export function MovieList({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors">
-                          {movie.title}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors">
+                            {movie.title}
+                          </span>
+                          {movie.isPinned && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5">
+                              <Pin className="w-2.5 h-2.5 fill-amber-400" />
+                              PIN
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-slate-500 font-mono">
                           /{movie.slug}
@@ -402,13 +432,28 @@ export function MovieList({
                       >
                         <RotateCw className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        onClick={() => onEditMovie(movie)}
-                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
+                      {onTogglePin && (
+                        <button
+                          onClick={() => onTogglePin(movie)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            movie.isPinned
+                              ? "text-amber-400 bg-amber-500/20"
+                              : "text-slate-400 hover:text-amber-300 hover:bg-amber-500/10"
+                          }`}
+                          title={movie.isPinned ? "Unpin Movie" : "Pin to Top"}
+                        >
+                          <Pin className={`w-3.5 h-3.5 ${movie.isPinned ? "fill-amber-400" : ""}`} />
+                        </button>
+                      )}
+                      {onEditMovie && (
+                        <button
+                          onClick={() => onEditMovie(movie)}
+                          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {onUploadVideo && (
                         <button
                           onClick={() => onUploadVideo(movie)}

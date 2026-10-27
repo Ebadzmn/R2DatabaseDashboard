@@ -19,6 +19,7 @@ import {
   Sparkles,
   ChevronRight,
   UploadCloud,
+  Pin,
 } from "lucide-react";
 
 interface SeriesListProps {
@@ -30,6 +31,7 @@ interface SeriesListProps {
   onReprocessSeries: (id: string) => void;
   onUploadVideo?: (series: IMovie) => void;
   onManageEpisodes: (series: IMovie) => void;
+  onTogglePin?: (series: IMovie) => void;
   onOpenCreate: () => void;
   onRefresh: () => void;
   isLoading?: boolean;
@@ -44,6 +46,7 @@ export function SeriesList({
   onReprocessSeries,
   onUploadVideo,
   onManageEpisodes,
+  onTogglePin,
   onOpenCreate,
   onRefresh,
   isLoading = false,
@@ -212,6 +215,12 @@ export function SeriesList({
                 <div className="absolute top-3 left-3">{getStatusBadge(item.status, item.processingProgress)}</div>
 
                 <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  {item.isPinned && (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-500/90 backdrop-blur-md text-[10px] font-black text-black flex items-center gap-1 shadow-lg shadow-amber-500/30">
+                      <Pin className="w-2.5 h-2.5 fill-black" />
+                      PINNED
+                    </span>
+                  )}
                   {item.category && (
                     <span className="px-2 py-0.5 rounded-md bg-indigo-600/80 backdrop-blur-md text-[10px] font-semibold text-white border border-indigo-400/30 uppercase">
                       {item.category}
@@ -326,6 +335,19 @@ export function SeriesList({
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
+                    {onTogglePin && (
+                      <button
+                        onClick={() => onTogglePin(item)}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          item.isPinned
+                            ? "text-amber-400 bg-amber-500/20 border border-amber-500/30 hover:bg-amber-500/30"
+                            : "text-slate-400 hover:text-amber-300 hover:bg-amber-500/10"
+                        }`}
+                        title={item.isPinned ? "Unpin Series" : "Pin Series to Top"}
+                      >
+                        <Pin className={`w-4 h-4 ${item.isPinned ? "fill-amber-400" : ""}`} />
+                      </button>
+                    )}
                     {onUploadVideo && (
                       <button
                         onClick={() => onUploadVideo(item)}
@@ -376,8 +398,16 @@ export function SeriesList({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-slate-200 group-hover:text-purple-400 transition-colors">
-                          {item.title}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-slate-200 group-hover:text-purple-400 transition-colors">
+                            {item.title}
+                          </span>
+                          {item.isPinned && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-0.5">
+                              <Pin className="w-2.5 h-2.5 fill-amber-400" />
+                              PIN
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-slate-500 font-mono">/{item.slug}</div>
                       </div>
@@ -413,13 +443,28 @@ export function SeriesList({
                       >
                         <RotateCw className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        onClick={() => onEditSeries(item)}
-                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg cursor-pointer"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
+                      {onTogglePin && (
+                        <button
+                          onClick={() => onTogglePin(item)}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            item.isPinned
+                              ? "text-amber-400 bg-amber-500/20"
+                              : "text-slate-400 hover:text-amber-300 hover:bg-amber-500/10"
+                          }`}
+                          title={item.isPinned ? "Unpin Series" : "Pin to Top"}
+                        >
+                          <Pin className={`w-3.5 h-3.5 ${item.isPinned ? "fill-amber-400" : ""}`} />
+                        </button>
+                      )}
+                      {onEditSeries && (
+                        <button
+                          onClick={() => onEditSeries(item)}
+                          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg cursor-pointer"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {onUploadVideo && (
                         <button
                           onClick={() => onUploadVideo(item)}

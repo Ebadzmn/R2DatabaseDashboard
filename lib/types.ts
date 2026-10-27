@@ -61,6 +61,8 @@ export interface IMovie {
   processingProgress?: number;
   processingError?: string;
   screenshots?: string[];
+  isPinned?: boolean;
+  pinnedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -317,4 +319,52 @@ export interface IGenre {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export type BannerMediaType = "MOVIE" | "SERIES" | "CUSTOM";
+export type BannerCtaAction = "PLAY" | "DETAILS" | "LINK";
+
+export interface IHeroBanner {
+  _id: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  mediaType: BannerMediaType;
+  movieId?: string | any;
+  customImageUrl?: string;
+  badge?: string;
+  ctaText?: string;
+  ctaAction?: BannerCtaAction;
+  targetUrl?: string;
+  order: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type SectionType = "TOP_10" | "MOVIE_ROW" | "SERIES_ROW" | "GRID" | "BANNER";
+export type SectionContentType = "MOVIE" | "SERIES" | "MIXED";
+
+export interface ISectionItem {
+  movieId: string | any;
+  order: number;
+  customTag?: string;
+  addedAt?: string;
+}
+
+export interface IHomeSection {
+  _id: string;
+  key: string;
+  title: string;
+  subtitle?: string;
+  sectionType: SectionType;
+  contentType: SectionContentType;
+  items: ISectionItem[];
+  maxItems?: number;
+  order: number;
+  isActive: boolean;
+  isSystem: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 

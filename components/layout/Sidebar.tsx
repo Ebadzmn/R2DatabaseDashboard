@@ -13,9 +13,10 @@ import {
   Users,
   Layers,
   Tag,
+  Sparkles,
 } from "lucide-react";
 
-export type NavTab = "overview" | "movies" | "series" | "categories" | "genres" | "storage" | "upload" | "users";
+export type NavTab = "overview" | "movies" | "series" | "content" | "categories" | "genres" | "storage" | "upload" | "users";
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -60,6 +61,12 @@ export function Sidebar({
       label: "Series & Shows",
       icon: Tv,
       badge: totalSeriesCount > 0 ? totalSeriesCount : null,
+    },
+    {
+      id: "content" as NavTab,
+      label: "Home CMS & Featured",
+      icon: Sparkles,
+      badge: "CMS",
     },
     {
       id: "categories" as NavTab,
