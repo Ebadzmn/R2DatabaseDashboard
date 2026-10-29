@@ -367,4 +367,152 @@ export interface IHomeSection {
   updatedAt?: string;
 }
 
+export interface IWatchHistory {
+  _id: string;
+  userId: string;
+  movieId: string | IMovie;
+  movieType: "MOVIE" | "SERIES";
+  seasonNumber?: number;
+  episodeNumber?: number;
+  episodeTitle?: string;
+  positionSeconds: number;
+  durationSeconds: number;
+  progressPercentage: number;
+  status: "NOT_COMPLETED" | "IN_PROGRESS" | "COMPLETED";
+  lastAction?: string;
+  lastWatchedAt: string;
+  title: string;
+  poster?: string;
+  backdrop?: string;
+  genres?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
 
+
+
+
+// ==========================================
+// Community Feed Types
+// ==========================================
+export type PostStatus = "ACTIVE" | "HIDDEN" | "REMOVED";
+export type CommentStatus = "ACTIVE" | "REMOVED";
+export type ReportContentType = "POST" | "COMMENT";
+export type ReportStatus = "PENDING" | "UNDER_REVIEW" | "ACTION_TAKEN" | "REJECTED" | "RESOLVED" | "DISMISSED";
+export type ReportReason =
+  | "SPAM"
+  | "INAPPROPRIATE"
+  | "COPYRIGHT"
+  | "HARASSMENT"
+  | "MISLEADING"
+  | "OTHER";
+
+export interface ICommunityAuthor {
+  _id: string;
+  displayName: string;
+  email?: string;
+  avatarUrl?: string;
+  isGuest?: boolean;
+  status?: string;
+}
+
+export interface ICommunityPost {
+  _id: string;
+  authorId: ICommunityAuthor;
+  caption: string;
+  images: string[];
+  movieId?: IMovie;
+  likesCount: number;
+  commentsCount: number;
+  reportsCount: number;
+  status: PostStatus;
+  moderationReason?: string;
+  moderatedBy?: string;
+  moderatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IPostComment {
+  _id: string;
+  postId: string | { _id: string; caption?: string; images?: string[]; status?: string };
+  authorId: ICommunityAuthor;
+  content: string;
+  status: CommentStatus;
+  moderationReason?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface IPostReport {
+  _id: string;
+  reportedContentType: ReportContentType;
+  contentId: string;
+  postId?: {
+    _id: string;
+    caption?: string;
+    images?: string[];
+    status?: string;
+    authorId?: ICommunityAuthor;
+  };
+  reporterId: ICommunityAuthor;
+  contentOwnerId?: ICommunityAuthor;
+  reason: ReportReason;
+  details?: string;
+  status: ReportStatus;
+  actionTaken?: string;
+  userNotification?: string;
+  adminNotes?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  commentPreview?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface IFeedStats {
+  totalPosts: number;
+  totalComments: number;
+  totalLikes: number;
+  totalReports: number;
+  pendingReports: number;
+  resolvedReports: number;
+  removedPosts: number;
+}
+
+export interface IModerationAudit {
+  _id: string;
+  targetType: "POST" | "COMMENT";
+  targetId: string;
+  authorId: ICommunityAuthor;
+  captionPreview?: string;
+  images?: string[];
+  movieId?: IMovie;
+  action: "REMOVE" | "RESTORE" | "HIDE" | "ACTION_TAKEN" | "REJECT" | "RESOLVE";
+  reason: string;
+  adminId?: { _id: string; name?: string; email?: string; username?: string };
+  reportIds?: string[];
+  reporters?: ICommunityAuthor[];
+  createdAt: string;
+}
+
+export interface IAppUpdateConfig {
+  isUpdateActive: boolean;
+  isForceUpdate: boolean;
+  latestVersion: string;
+  minVersion: string;
+  title: string;
+  message: string;
+  releaseNotes: string[];
+  downloadUrl: string;
+}
+
+export interface ISystemStatus {
+  isMaintenance: boolean;
+  title: string;
+  message: string;
+  estimatedDowntime?: string;
+  supportContact?: string;
+  appUpdate?: IAppUpdateConfig;
+  updatedAt?: string;
+}

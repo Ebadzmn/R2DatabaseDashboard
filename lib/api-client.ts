@@ -20,6 +20,16 @@ import {
   IGenre,
   IHeroBanner,
   IHomeSection,
+  ICommunityPost,
+  IPostComment,
+  IPostReport,
+  IFeedStats,
+  IModerationAudit,
+  PostStatus,
+  ReportStatus,
+  ReportContentType,
+  ISystemStatus,
+  IAppUpdateConfig,
 } from "./types";
 
 const API_BASE_URL =
@@ -518,6 +528,93 @@ export const api = {
       request<{ reordered: boolean }>("/admin/home-sections/reorder", {
         method: "PUT",
         body: JSON.stringify({ orderedIds }),
+      }),
+  },
+  // Community Feed Moderation
+  community: {
+    getStats: () => request<IFeedStats>("/admin/community/stats"),
+    getPosts: (params: { page?: number; limit?: number; status?: PostStatus; search?: string; minReports?: number } = {}) => {
+      const query = new URLSearchParams();
+      if (params.page) query.append("page", params.page.toString());
+      if (params.limit) query.append("limit", params.limit.toString());
+      if (params.status) query.append("status", params.status);
+      if (params.search) query.append("search", params.search);
+      if (params.minReports) query.append("minReports", params.minReports.toString());
+      const qs = query.toString();
+      return request<ICommunityPost[]>(
+        `/admin/community/posts${qs ? `?${qs}` : ""}`
+      );
+    },
+    moderatePost: (id: string, action: "REMOVE" | "RESTORE" | "HIDE", reason?: string) =>
+      request<ICommunityPost>(`/admin/community/posts/${id}/moderate`, {
+        method: "PATCH",
+        body: JSON.stringify({ action, reason }),
+      }),
+    deletePost: (id: string) =>
+      request<{ success: boolean }>(`/admin/community/posts/${id}`, {
+        method: "DELETE",
+      }),
+    getReports: (params: { page?: number; limit?: number; status?: string; reason?: string; contentType?: ReportContentType; postId?: string } = {}) => {
+      const query = new URLSearchParams();
+      if (params.page) query.append("page", params.page.toString());
+      if (params.limit) query.append("limit", params.limit.toString());
+      if (params.status && params.status !== "ALL") query.append("status", params.status);
+      if (params.reason && params.reason !== "ALL") query.append("reason", params.reason);
+      if (params.postId) query.append("postId", params.postId);
+      if (params.contentType) query.append("contentType", params.contentType);
+      const qs = query.toString();
+      return request<IPostReport[]>(
+        `/admin/community/reports${qs ? `?${qs}` : ""}`
+      );
+    },
+    resolveReport: (id: string, data: { status: ReportStatus; adminNotes?: string; userNotification?: string; actionOnContent?: "REMOVE" | "RESTORE" | "NONE"; contentRemovalReason?: string }) =>
+      request<IPostReport>(`/admin/community/reports/${id}/resolve`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    getModerationHistory: (params: { page?: number; limit?: number; search?: string; action?: string } = {}) => {
+      const query = new URLSearchParams();
+      if (params.page) query.append("page", params.page.toString());
+      if (params.limit) query.append("limit", params.limit.toString());
+      if (params.search) query.append("search", params.search);
+      if (params.action && params.action !== "ALL") query.append("action", params.action);
+      const qs = query.toString();
+      return request<IModerationAudit[]>(
+        `/admin/community/history${qs ? `?${qs}` : ""}`
+      );
+    },
+    getComments: (params: { page?: number; limit?: number; search?: string } = {}) => {
+      const query = new URLSearchParams();
+      if (params.page) query.append("page", params.page.toString());
+      if (params.limit) query.append("limit", params.limit.toString());
+      if (params.search) query.append("search", params.search);
+      const qs = query.toString();
+      return request<IPostComment[]>(
+        `/admin/community/comments${qs ? `?${qs}` : ""}`
+      );
+    },
+    deleteComment: (id: string) =>
+      request<{ success: boolean }>(`/admin/community/comments/${id}`, {
+        method: "DELETE",
+      }),
+  },
+  system: {
+    getStatus: () => request<ISystemStatus>("/admin/system/status"),
+    updateStatus: (data: {
+      isMaintenance: boolean;
+      title?: string;
+      message?: string;
+      estimatedDowntime?: string;
+      supportContact?: string;
+    }) =>
+      request<ISystemStatus>("/admin/system/status", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    updateAppUpdate: (data: Partial<IAppUpdateConfig>) =>
+      request<ISystemStatus>("/admin/system/app-update", {
+        method: "PUT",
+        body: JSON.stringify(data),
       }),
   },
 };

@@ -17,6 +17,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CineCore Admin — Next-Gen Movie Streaming Dashboard",
   description: "High-performance Cloudflare R2 multi-storage, direct-to-R2 upload, and HLS streaming platform administration.",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

@@ -25,6 +25,7 @@ import { UserManagement } from "@/components/users/UserManagement";
 import { CategoryManagement } from "@/components/categories/CategoryManagement";
 import { GenreManagement } from "@/components/genres/GenreManagement";
 import { ContentManagement } from "@/components/content/ContentManagement";
+import { CommunityManagement } from "@/components/community/CommunityManagement";
 import { ConfirmDeleteModal } from "@/components/ui/ConfirmDeleteModal";
 import { IEpisode } from "@/lib/types";
 
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const [totalUsersCount, setTotalUsersCount] = useState(0);
   const [categoriesCount, setCategoriesCount] = useState(0);
   const [genresCount, setGenresCount] = useState(0);
+  const [pendingReportsCount, setPendingReportsCount] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
 
   // Modals
@@ -67,12 +69,13 @@ export default function DashboardPage() {
   const fetchData = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const [moviesRes, storageRes, usersStatsRes, categoriesRes, genresRes] = await Promise.all([
+      const [moviesRes, storageRes, usersStatsRes, categoriesRes, genresRes, commStatsRes] = await Promise.all([
         api.movies.getAll({ limit: 100 }),
         api.storage.getAll(),
         api.users.getStats().catch(() => null),
         api.categories.getAll(true).catch(() => null),
         api.genres.getAll(true).catch(() => null),
+        api.community.getStats().catch(() => null),
       ]);
       setMovies(moviesRes.data || []);
       setStorages(storageRes.data || []);
@@ -84,6 +87,9 @@ export default function DashboardPage() {
       }
       if (genresRes?.data) {
         setGenresCount(genresRes.data.length);
+      }
+      if (commStatsRes?.data) {
+        setPendingReportsCount(commStatsRes.data.pendingReports || 0);
       }
     } catch (err: any) {
       console.error("Failed to load dashboard data:", err);
@@ -306,6 +312,16 @@ export default function DashboardPage() {
           title: "Users & Guests Studio",
           subtitle: "Monitor registered members, guest device accounts, and manage block / unblock access",
         };
+      case "community":
+        return {
+          title: "Community Feed & Moderation",
+          subtitle: "Monitor user-generated posts, manage flagged content, and resolve moderation reports",
+        };
+      default:
+        return {
+          title: "Dashboard",
+          subtitle: "CineCore Admin Control Panel",
+        };
     }
   };
 
@@ -338,6 +354,7 @@ export default function DashboardPage() {
         totalUsersCount={totalUsersCount}
         categoriesCount={categoriesCount}
         genresCount={genresCount}
+        pendingReportsCount={pendingReportsCount}
       />
 
       {/* Main Content Area */}
@@ -443,6 +460,8 @@ export default function DashboardPage() {
           )}
 
           {currentTab === "users" && <UserManagement />}
+
+          {currentTab === "community" && <CommunityManagement />}
         </main>
       </div>
 

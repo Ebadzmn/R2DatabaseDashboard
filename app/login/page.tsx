@@ -61,11 +61,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-[#0f172a]/90 backdrop-blur-2xl border border-slate-800/90 rounded-3xl p-8 sm:p-10 shadow-2xl shadow-black/80 relative z-10">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-xl shadow-indigo-500/25 mb-4">
-            <Film className="w-7 h-7 text-white" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-2xl shadow-red-500/30 mb-4 border border-slate-800 bg-black">
+            <img src="/logo.png" alt="CineCore" className="w-full h-full object-cover" />
           </div>
           <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
-            CINE<span className="text-indigo-400">CORE</span>
+            CINE<span className="text-red-500">CORE</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Enterprise Movie Streaming & Multi-R2 Storage Platform

@@ -14,9 +14,10 @@ import {
   Layers,
   Tag,
   Sparkles,
+  MessageSquareText,
 } from "lucide-react";
 
-export type NavTab = "overview" | "movies" | "series" | "content" | "categories" | "genres" | "storage" | "upload" | "users";
+export type NavTab = "overview" | "movies" | "series" | "content" | "categories" | "genres" | "storage" | "upload" | "users" | "community";
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -29,6 +30,7 @@ interface SidebarProps {
   totalUsersCount?: number;
   categoriesCount?: number;
   genresCount?: number;
+  pendingReportsCount?: number;
 }
 
 export function Sidebar({
@@ -42,6 +44,7 @@ export function Sidebar({
   totalUsersCount = 0,
   categoriesCount = 0,
   genresCount = 0,
+  pendingReportsCount = 0,
 }: SidebarProps) {
   const navItems = [
     {
@@ -98,6 +101,12 @@ export function Sidebar({
       icon: Users,
       badge: totalUsersCount > 0 ? totalUsersCount : null,
     },
+    {
+      id: "community" as NavTab,
+      label: "Community Feed",
+      icon: MessageSquareText,
+      badge: pendingReportsCount > 0 ? `${pendingReportsCount} Alert` : null,
+    },
   ];
 
   return (
@@ -110,13 +119,13 @@ export function Sidebar({
       <div>
         <div className="h-18 flex items-center justify-between px-5 border-b border-slate-800/60">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 shrink-0">
-              <Film className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-red-500/20 shrink-0 border border-slate-800/80 bg-black">
+              <img src="/logo.png" alt="CineCore" className="w-full h-full object-cover" />
             </div>
             {!collapsed && (
               <div className="flex flex-col">
                 <span className="font-bold tracking-wider text-base text-white flex items-center gap-1.5">
-                  CINE<span className="text-indigo-400">CORE</span>
+                  CINE<span className="text-red-500">CORE</span>
                 </span>
                 <span className="text-[10px] tracking-widest text-slate-400 font-medium uppercase">
                   Admin Platform
